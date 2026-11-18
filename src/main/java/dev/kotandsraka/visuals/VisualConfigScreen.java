@@ -5,11 +5,18 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class VisualConfigScreen extends Screen {
-    private static final int PANEL_WIDTH = 460;
-    private static final int PANEL_HEIGHT = 306;
+    private static final int PANEL_WIDTH = 590;
+    private static final int PANEL_HEIGHT = 390;
+    private static final int VISIBLE_ROWS = 6;
     private final Screen parent;
     private int tab = 0;
+    private int page = 0;
+
+    private record Feature(String name, String description, boolean enabled, Runnable toggle) {}
 
     public VisualConfigScreen(Screen parent) {
         super(Component.literal("KotAndSraka Visuals"));
@@ -34,122 +41,220 @@ public final class VisualConfigScreen extends Screen {
         VisualConfig cfg = VisualConfig.get();
         int left = panelLeft();
         int top = panelTop();
-        int sideX = left + 16;
-        int contentX = left + 132;
-        int col2 = contentX + 164;
-        int row1 = top + 78;
-        int row2 = top + 128;
-        int row3 = top + 178;
-        int row4 = top + 228;
 
-        addTab("COMBAT", 0, sideX, top + 72);
-        addTab("HUD", 1, sideX, top + 106);
-        addTab("MOVEMENT", 2, sideX, top + 140);
-        addTab("VISUALS", 3, sideX, top + 174);
+        String[] tabs = {"COMBAT", "RENDER", "HUD", "MOVEMENT", "THEME"};
+        int tabWidth = 104;
+        for (int i = 0; i < tabs.length; i++) {
+            final int id = i;
+            addRenderableWidget(Button.builder(Component.literal((tab == i ? "◆ " : "") + tabs[i]), b -> {
+                tab = id;
+                page = 0;
+                rebuild();
+            }).bounds(left + 16 + i * 110, top + 54, tabWidth, 25).build());
+        }
 
-        if (tab == 0) {
-            addToggle("Hit Particles", cfg.hitParticles, contentX, row1, () -> cfg.hitParticles = !cfg.hitParticles);
-            addToggle("Critical Particles", cfg.criticalParticles, col2, row1, () -> cfg.criticalParticles = !cfg.criticalParticles);
-            addToggle("Hit Flash", cfg.hitFlash, contentX, row2, () -> cfg.hitFlash = !cfg.hitFlash);
-            addToggle("Hit Text", cfg.hitText, col2, row2, () -> cfg.hitText = !cfg.hitText);
-            addCycle("Particle Count: " + cfg.particleCount, contentX, row3,
-                () -> cfg.particleCount = cfg.particleCount >= 24 ? 2 : cfg.particleCount + 2);
-            addCycle("Particle Size: " + String.format("%.2f", cfg.particleScale), col2, row3,
-                () -> cfg.particleScale = cfg.particleScale >= 2.0f ? 0.5f : cfg.particleScale + 0.25f);
-            addCycle("Lifetime: " + cfg.particleLifetimeMs + " ms", contentX, row4,
-                () -> cfg.particleLifetimeMs = cfg.particleLifetimeMs >= 1000 ? 150 : cfg.particleLifetimeMs + 50);
-        } else if (tab == 1) {
-            addToggle("Target HUD", cfg.targetHud, contentX, row1, () -> cfg.targetHud = !cfg.targetHud);
-            addToggle("Armor HUD", cfg.armorHud, col2, row1, () -> cfg.armorHud = !cfg.armorHud);
-            addToggle("Keystrokes", cfg.keystrokes, contentX, row2, () -> cfg.keystrokes = !cfg.keystrokes);
-            addToggle("Edit HUD in Chat: " + (cfg.hudEditMode ? "ON" : "OFF"), cfg.hudEditMode, col2, row2,
-                () -> cfg.hudEditMode = !cfg.hudEditMode);
-            addCycle("Reset HUD Positions", contentX, row3, VisualConfig::resetHudPositions);
-        } else if (tab == 2) {
-            addToggle("Player Trail", cfg.playerTrail, contentX, row1, () -> cfg.playerTrail = !cfg.playerTrail);
-            addToggle("Auto Sprint", cfg.autoSprint, col2, row1, () -> cfg.autoSprint = !cfg.autoSprint);
-            addToggle("Jump Rings", cfg.jumpRings, contentX, row2, () -> cfg.jumpRings = !cfg.jumpRings);
-            addCycle("Trail Intensity: " + cfg.trailIntensity, col2, row2,
-                () -> cfg.trailIntensity = cfg.trailIntensity >= 5 ? 1 : cfg.trailIntensity + 1);
+        if (tab == 4) {
+            buildThemeTab(cfg, left, top);
         } else {
-            addToggle("China Hat", cfg.chinaHat, contentX, row1, () -> cfg.chinaHat = !cfg.chinaHat);
-            addToggle("Rainbow Trail", cfg.trailRainbow, col2, row1, () -> cfg.trailRainbow = !cfg.trailRainbow);
-            addCycle("Trail Width: " + String.format("%.1f", cfg.trailWidth), contentX, row2,
-                () -> cfg.trailWidth = cfg.trailWidth >= 5.0f ? 1.0f : cfg.trailWidth + 0.5f);
+            List<Feature> features = featuresForTab(cfg);
+            int pageCount = Math.max(1, (features.size() + VISIBLE_ROWS * 2 - 1) / (VISIBLE_ROWS * 2));
+            page = Math.max(0, Math.min(page, pageCount - 1));
+            int start = page * VISIBLE_ROWS * 2;
+            for (int visible = 0; visible < VISIBLE_ROWS * 2 && start + visible < features.size(); visible++) {
+                Feature feature = features.get(start + visible);
+                int column = visible % 2;
+                int row = visible / 2;
+                int x = left + 22 + column * 276;
+                int y = top + 94 + row * 38;
+                addFeature(feature, x, y);
+            }
+
+            if (pageCount > 1) {
+                addRenderableWidget(Button.builder(Component.literal("< PREV"), b -> {
+                    page = Math.max(0, page - 1);
+                    rebuild();
+                }).bounds(left + 22, top + 330, 94, 24).build());
+                addRenderableWidget(Button.builder(Component.literal("NEXT >"), b -> {
+                    page = Math.min(pageCount - 1, page + 1);
+                    rebuild();
+                }).bounds(left + 122, top + 330, 94, 24).build());
+            }
+
+            addRenderableWidget(Button.builder(Component.literal("PAGE " + (page + 1) + " / " + pageCount),
+                b -> {}).bounds(left + 224, top + 330, 110, 24).build());
+            addRenderableWidget(Button.builder(Component.literal("PARTICLE COUNT: " + cfg.particleCount), b -> {
+                cfg.particleCount = cfg.particleCount >= 24 ? 2 : cfg.particleCount + 2;
+                VisualConfig.save();
+                rebuild();
+            }).bounds(left + 346, top + 330, 110, 24).build());
+            addRenderableWidget(Button.builder(Component.literal("TRAIL WIDTH: " + String.format("%.1f", cfg.trailWidth)), b -> {
+                cfg.trailWidth = cfg.trailWidth >= 5.0f ? 1.0f : cfg.trailWidth + 0.5f;
+                VisualConfig.save();
+                rebuild();
+            }).bounds(left + 462, top + 330, 108, 24).build());
         }
 
         addRenderableWidget(Button.builder(Component.literal("RESET ALL"), b -> {
             VisualConfig.reset();
             rebuild();
-        }).bounds(left + 16, top + PANEL_HEIGHT - 42, 104, 26).build());
-
+        }).bounds(left + 18, top + 356, 108, 25).build());
         addRenderableWidget(Button.builder(Component.literal("DONE"), b -> onClose())
-            .bounds(left + PANEL_WIDTH - 120, top + PANEL_HEIGHT - 42, 104, 26).build());
+            .bounds(left + PANEL_WIDTH - 126, top + 356, 108, 25).build());
     }
 
-    private void addTab(String label, int tabId, int x, int y) {
-        boolean active = tab == tabId;
-        addRenderableWidget(Button.builder(Component.literal((active ? "◆  " : "   ") + label), b -> {
-            tab = tabId;
-            rebuild();
-        }).bounds(x, y, 100, 26).build());
+    private List<Feature> featuresForTab(VisualConfig c) {
+        List<Feature> list = new ArrayList<>();
+        switch (tab) {
+            case 0 -> {
+                add(list, "Hit Particles", "Particles on hit", c.hitParticles, () -> c.hitParticles = !c.hitParticles);
+                add(list, "Critical Particles", "Extra particles on critical hits", c.criticalParticles, () -> c.criticalParticles = !c.criticalParticles);
+                add(list, "Hit Flash", "Brief screen flash after hitting", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
+                add(list, "Hit Marker", "HIT / CRITICAL label on screen", c.hitText, () -> c.hitText = !c.hitText);
+                add(list, "Damage Numbers", "Displays damage dealt to a target", c.damageNumbers, () -> c.damageNumbers = !c.damageNumbers);
+                add(list, "Kill Effect", "Particle burst when your target dies", c.killEffect, () -> c.killEffect = !c.killEffect);
+                add(list, "Target Ring", "Ring burst on the attacked target", c.targetRing, () -> c.targetRing = !c.targetRing);
+                add(list, "Target ESP", "Continuous outline ring around target", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
+                add(list, "Hit Range", "Shows the 3-block hit-range circle", c.hitRange, () -> c.hitRange = !c.hitRange);
+                add(list, "Custom Crosshair", "Accent-colored crosshair overlay", c.customCrosshair, () -> c.customCrosshair = !c.customCrosshair);
+                add(list, "Combo Counter", "Counts consecutive hits", c.comboHud, () -> c.comboHud = !c.comboHud);
+            }
+            case 1 -> {
+                add(list, "Player Trail", "Third-person movement trail", c.playerTrail, () -> c.playerTrail = !c.playerTrail);
+                add(list, "Rainbow Trail", "Cycles trail colors", c.trailRainbow, () -> c.trailRainbow = !c.trailRainbow);
+                add(list, "China Hat", "Ring above the player head", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
+                add(list, "Body Glow", "Orbiting cosmetic particles", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
+                add(list, "World Particles", "Ambient particles around you", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
+                add(list, "Pearl Tracer", "Trail behind your ender pearls", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
+                add(list, "Trajectory", "Projectile path prediction guide", c.trajectory, () -> c.trajectory = !c.trajectory);
+                add(list, "Jump Rings", "Particle ring when you jump", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
+                add(list, "Skull Jump", "Pixel skull appears near crosshair on jump", c.skullJump, () -> c.skullJump = !c.skullJump);
+            }
+            case 2 -> {
+                add(list, "Target HUD", "Target name and health bar", c.targetHud, () -> c.targetHud = !c.targetHud);
+                add(list, "Armor HUD", "Armor slots and durability", c.armorHud, () -> c.armorHud = !c.armorHud);
+                add(list, "Keystrokes", "WASD and mouse key display", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
+                add(list, "FPS", "Frames per second", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
+                add(list, "CPS", "Clicks per second counter", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
+                add(list, "Ping", "Server latency", c.pingHud, () -> c.pingHud = !c.pingHud);
+                add(list, "Coordinates", "XYZ position", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
+                add(list, "Speed", "Movement speed in blocks/second", c.speedHud, () -> c.speedHud = !c.speedHud);
+                add(list, "Totem Counter", "Totems in inventory", c.totemHud, () -> c.totemHud = !c.totemHud);
+                add(list, "Potion Effects", "Count of active effects", c.potionHud, () -> c.potionHud = !c.potionHud);
+                add(list, "Clock", "Minecraft world time", c.clockHud, () -> c.clockHud = !c.clockHud);
+                add(list, "Compass", "Facing direction", c.compassHud, () -> c.compassHud = !c.compassHud);
+                add(list, "Active Modules", "Colored list of enabled functions", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
+                add(list, "Edit HUD in Chat", "Hold right mouse on a panel to move it", c.hudEditMode, () -> c.hudEditMode = !c.hudEditMode);
+                add(list, "Reset HUD Positions", "Returns panels to their default positions", false, VisualConfig::resetHudPositions);
+            }
+            case 3 -> {
+                add(list, "Auto Sprint", "Automatically sprint while moving forward", c.autoSprint, () -> c.autoSprint = !c.autoSprint);
+            }
+            default -> {
+            }
+        }
+        return list;
     }
 
-    private void addToggle(String label, boolean enabled, int x, int y, Runnable action) {
-        String state = enabled ? "  [ON]" : "  [OFF]";
-        addRenderableWidget(Button.builder(Component.literal(label + state), b -> {
-            action.run();
+    private static void add(List<Feature> list, String name, String description, boolean enabled, Runnable toggle) {
+        list.add(new Feature(name, description, enabled, toggle));
+    }
+
+    private void addFeature(Feature feature, int x, int y) {
+        String state = feature.enabled ? "  ● ON" : "  ○ OFF";
+        addRenderableWidget(Button.builder(Component.literal(feature.name + state), b -> {
+            feature.toggle.run();
             VisualConfig.save();
             rebuild();
-        }).bounds(x, y, 154, 34).build());
+        }).bounds(x, y, 260, 30).build());
     }
 
-    private void addCycle(String label, int x, int y, Runnable action) {
-        addRenderableWidget(Button.builder(Component.literal(label), b -> {
-            action.run();
+    private void buildThemeTab(VisualConfig cfg, int left, int top) {
+        String[] names = {"CYAN", "VIOLET", "RED", "MINT", "GOLD", "PINK"};
+        addRenderableWidget(Button.builder(Component.literal("COLOR PALETTE: " + names[Math.floorMod(cfg.colorPreset, names.length)]), b -> {
+            cfg.colorPreset = (cfg.colorPreset + 1) % names.length;
             VisualConfig.save();
             rebuild();
-        }).bounds(x, y, 154, 34).build());
+        }).bounds(left + 24, top + 100, 250, 32).build());
+
+        addRenderableWidget(Button.builder(Component.literal("CHROMA ACCENT: " + (cfg.chromaTheme ? "ON" : "OFF")), b -> {
+            cfg.chromaTheme = !cfg.chromaTheme;
+            VisualConfig.save();
+            rebuild();
+        }).bounds(left + 290, top + 100, 250, 32).build());
+
+        addRenderableWidget(Button.builder(Component.literal("HUD OPACITY: " + Math.round(cfg.hudOpacity * 100) + "%"), b -> {
+            cfg.hudOpacity = cfg.hudOpacity >= 1.0f ? 0.25f : cfg.hudOpacity + 0.15f;
+            VisualConfig.save();
+            rebuild();
+        }).bounds(left + 24, top + 148, 250, 32).build());
+
+        addRenderableWidget(Button.builder(Component.literal("RESET HUD POSITIONS"), b -> {
+            VisualConfig.resetHudPositions();
+            rebuild();
+        }).bounds(left + 290, top + 148, 250, 32).build());
+
+        addRenderableWidget(Button.builder(Component.literal("GLASS MENU: " + (cfg.glassMenu ? "ON" : "OFF")), b -> {
+            cfg.glassMenu = !cfg.glassMenu;
+            VisualConfig.save();
+            rebuild();
+        }).bounds(left + 24, top + 196, 250, 32).build());
+
+        addRenderableWidget(Button.builder(Component.literal("ANIMATED MENU: " + (cfg.animatedMenu ? "ON" : "OFF")), b -> {
+            cfg.animatedMenu = !cfg.animatedMenu;
+            VisualConfig.save();
+            rebuild();
+        }).bounds(left + 290, top + 196, 250, 32).build());
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
         int left = panelLeft();
         int top = panelTop();
+        int accent = VisualConfig.accentColor();
 
-        g.fill(0, 0, this.width, this.height, 0xA800060F);
-        g.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xF00C1422);
-        g.fill(left, top, left + PANEL_WIDTH, top + 3, 0xFF56D8FF);
-        g.fill(left, top + 3, left + 5, top + PANEL_HEIGHT, 0xFF247BBA);
-        g.fill(left + 12, top + 58, left + 118, top + 250, 0xA90A101C);
-        g.fill(left + 126, top + 58, left + PANEL_WIDTH - 12, top + 250, 0xA90A101C);
-        g.fill(left + 12, top + 264, left + PANEL_WIDTH - 12, top + 265, 0x553E89B8);
+        g.fill(0, 0, this.width, this.height, 0xB800060D);
+        g.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, VisualConfig.panelColor());
+        g.fill(left, top, left + PANEL_WIDTH, top + 4, accent);
+        g.fill(left, top + 4, left + 4, top + PANEL_HEIGHT, accent);
+        g.fill(left + 14, top + 85, left + PANEL_WIDTH - 14, top + 86, accent & 0x55FFFFFF);
+        g.fill(left + 14, top + 346, left + PANEL_WIDTH - 14, top + 347, accent & 0x55FFFFFF);
 
-        g.drawString(this.font, "KOTAND SRAKA", left + 17, top + 14, 0xFFFFFFFF, false);
-        g.drawString(this.font, "VISUAL CLIENT  /  PULSE-STYLE MENU", left + 17, top + 31, 0xFF83A6C3, false);
-        g.drawString(this.font, tabTitle(), left + 136, top + 62, 0xFF71D9FF, false);
+        g.drawString(this.font, "KOTAND SRAKA  /  VISUAL CLIENT", left + 20, top + 14, 0xFFFFFFFF, false);
+        g.drawString(this.font, "RIGHT SHIFT  •  FEATURES  •  CUSTOM HUD  •  COLOR THEMES",
+            left + 20, top + 31, VisualConfig.mutedColor(), false);
+        g.drawString(this.font, tabTitle(), left + 22, top + 82, accent, false);
 
-        if (tab == 1) {
-            g.drawString(this.font, "Open chat, hold RIGHT MOUSE and drag a HUD panel.", left + 136, top + 216, 0xFFB8C8D8, false);
-            g.drawString(this.font, "Turn this mode off here when you're done.", left + 136, top + 231, 0xFF8199AE, false);
-        } else if (tab == 0) {
-            g.drawString(this.font, "Combat feedback and hit particle controls", left + 136, top + 216, 0xFF8199AE, false);
-        } else if (tab == 2) {
-            g.drawString(this.font, "Movement visuals and sprint helpers", left + 136, top + 216, 0xFF8199AE, false);
+        if (tab == 4) {
+            g.drawString(this.font, "Palette changes the panel, active modules and HUD accent.", left + 24, top + 260,
+                VisualConfig.mutedColor(), false);
+            g.fill(left + 24, top + 281, left + 540, top + 286, accent);
         } else {
-            g.drawString(this.font, "World and trail appearance", left + 136, top + 216, 0xFF8199AE, false);
+            g.drawString(this.font, "Select a feature to enable it. All features start OFF.", left + 22, top + 316,
+                VisualConfig.mutedColor(), false);
         }
 
-        g.drawString(this.font, "RIGHT SHIFT  •  CLOSE / OPEN", left + 136, top + 278, 0xFF66839C, false);
         super.render(g, mouseX, mouseY, delta);
+
+        // Accent outlines make the whole function list follow the selected palette.
+        for (var widget : this.children()) {
+            if (widget instanceof Button button && button.visible) {
+                int x = button.getX();
+                int y = button.getY();
+                int w = button.getWidth();
+                int h = button.getHeight();
+                g.fill(x, y, x + w, y + 1, accent & 0xAAFFFFFF);
+                g.fill(x, y + h - 1, x + w, y + h, accent & 0xAAFFFFFF);
+            }
+        }
     }
 
     private String tabTitle() {
         return switch (tab) {
-            case 0 -> "COMBAT SETTINGS";
-            case 1 -> "HUD LAYOUT";
-            case 2 -> "MOVEMENT";
-            default -> "VISUALS";
+            case 0 -> "COMBAT MODULES";
+            case 1 -> "WORLD / RENDER MODULES";
+            case 2 -> "HUD MODULES";
+            case 3 -> "MOVEMENT";
+            default -> "THEME / COLOR PALETTE";
         };
     }
 
