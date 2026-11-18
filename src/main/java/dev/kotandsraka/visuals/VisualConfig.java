@@ -28,12 +28,19 @@ public final class VisualConfig {
         if (INSTANCE == null) INSTANCE = new VisualConfig();
         save();
     }
+
     public static void save() {
         try {
             Files.createDirectories(FILE.getParent());
             Files.writeString(FILE, GSON.toJson(INSTANCE == null ? new VisualConfig() : INSTANCE));
         } catch (IOException ignored) {}
     }
+
+    public static void reset() {
+        INSTANCE = new VisualConfig();
+        save();
+    }
+
     public static VisualConfig get() {
         if (INSTANCE == null) load();
         return INSTANCE;
