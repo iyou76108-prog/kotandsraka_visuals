@@ -102,25 +102,35 @@ public final class VisualConfig {
     public int trailAlpha = 190;
 
     public static int accentColor() {
-        return switch (get().colorPreset) {
-            case 1 -> 0xFFB58CFF; // violet
-            case 2 -> 0xFFFF657A; // red
-            case 3 -> 0xFF62E6A7; // mint
-            case 4 -> 0xFFFFC45C; // gold
-            case 5 -> 0xFFFF82C8; // pink
-            default -> 0xFF56D8FF; // cyan
+        VisualConfig cfg = get();
+        if (cfg.chromaTheme || cfg.animatedMenu) {
+            float phase = (System.currentTimeMillis() % 5000L) / 5000.0f;
+            float red = (float) (Math.sin(phase * Math.PI * 2.0) * 0.5 + 0.5);
+            float green = (float) (Math.sin((phase + 0.3333f) * Math.PI * 2.0) * 0.5 + 0.5);
+            float blue = (float) (Math.sin((phase + 0.6666f) * Math.PI * 2.0) * 0.5 + 0.5);
+            return 0xFF000000 | ((int) (red * 255) << 16) | ((int) (green * 255) << 8) | (int) (blue * 255);
+        }
+        return switch (cfg.colorPreset) {
+            case 1 -> 0xFFB58CFF;
+            case 2 -> 0xFFFF657A;
+            case 3 -> 0xFF62E6A7;
+            case 4 -> 0xFFFFC45C;
+            case 5 -> 0xFFFF82C8;
+            default -> 0xFF56D8FF;
         };
     }
 
     public static int panelColor() {
-        return switch (get().colorPreset) {
-            case 1 -> 0xEE181329;
-            case 2 -> 0xEE241319;
-            case 3 -> 0xEE10231D;
-            case 4 -> 0xEE241D10;
-            case 5 -> 0xEE251421;
-            default -> 0xEE0C1724;
+        VisualConfig cfg = get();
+        int rgb = switch (cfg.colorPreset) {
+            case 1 -> 0x00181329;
+            case 2 -> 0x00241319;
+            case 3 -> 0x0010231D;
+            case 4 -> 0x00241D10;
+            case 5 -> 0x00251421;
+            default -> 0x000C1724;
         };
+        return ((cfg.glassMenu ? 0xB8 : 0xEE) << 24) | rgb;
     }
 
     public static int widgetColor() {
