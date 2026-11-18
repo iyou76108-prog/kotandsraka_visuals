@@ -28,6 +28,9 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             if (client.player == null || client.level == null) return;
             boolean ground = client.player.onGround();
             VisualConfig cfg = VisualConfig.get();
+            if (cfg.autoSprint && client.player.isAlive() && client.player.onGround() && client.player.zza > 0.0F && !client.player.isSprinting()) {
+                client.player.setSprinting(true);
+            }
             if (cfg.playerTrail && client.player.getDeltaMovement().horizontalDistanceSqr() > 0.0025) {
                 for (int i = 0; i < cfg.trailIntensity; i++) {
                     double ox = (client.level.random.nextDouble() - .5) * .35;
