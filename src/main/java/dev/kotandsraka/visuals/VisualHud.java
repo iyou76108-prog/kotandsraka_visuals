@@ -134,6 +134,13 @@ public final class VisualHud {
             if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "ARMOR");
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
                 HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "KEYS");
+            int statRows = infoHudLineCount(cfg);
+            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5, 225, statRows * 12 + 12, "INFO");
+            int moduleCount = activeModuleCount(cfg);
+            if (cfg.activeModulesHud && moduleCount > 0) {
+                HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
+                    112, moduleCount * 11 + 22, "MODULES");
+            }
             graphics.drawCenteredString(mc.font, "HUD EDIT  •  HOLD RIGHT MOUSE TO MOVE  •  DISABLE EDIT MODE TO FINISH",
                 graphics.guiWidth() / 2, 5, VisualConfig.accentColor());
         }
@@ -251,7 +258,7 @@ public final class VisualHud {
         List<String> modules = activeModules(cfg);
         if (modules.isEmpty()) return;
 
-        int x = cfg.modulesHudX < 0 ? g.guiWidth() - 112 : cfg.modulesHudX;
+        int x = HudLayoutEditor.modulesX(mc, cfg);
         int y = cfg.modulesHudY;
         int width = 0;
         for (String module : modules) width = Math.max(width, mc.font.width(module));
@@ -262,6 +269,24 @@ public final class VisualHud {
         for (int i = 0; i < modules.size(); i++) {
             g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, 0xFFEAF5FF, false);
         }
+    }
+
+    public static int infoHudLineCount(VisualConfig c) {
+        int count = 0;
+        if (c.fpsHud) count++;
+        if (c.cpsHud) count++;
+        if (c.pingHud) count++;
+        if (c.coordsHud) count++;
+        if (c.speedHud) count++;
+        if (c.totemHud) count++;
+        if (c.potionHud) count++;
+        if (c.clockHud) count++;
+        if (c.compassHud) count++;
+        return count;
+    }
+
+    public static int activeModuleCount(VisualConfig c) {
+        return activeModules(c).size();
     }
 
     private static List<String> activeModules(VisualConfig c) {
