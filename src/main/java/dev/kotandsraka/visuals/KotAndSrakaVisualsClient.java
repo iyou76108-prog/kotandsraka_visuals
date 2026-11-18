@@ -26,6 +26,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             new KeyMapping.Category(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "main"))
         ));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            HudLayoutEditor.tick(client);
             boolean rightShiftDown = client.getWindow() != null && GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
             boolean rightShiftPressed = rightShiftDown && !rightShiftWasDown;
             rightShiftWasDown = rightShiftDown;
