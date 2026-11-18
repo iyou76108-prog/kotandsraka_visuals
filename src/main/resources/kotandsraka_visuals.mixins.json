@@ -2,10 +2,7 @@
   "required": true,
   "package": "dev.kotandsraka.visuals.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [
-    "GameRendererMixin",
-    "ItemInHandRendererMixin"
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }
