@@ -2,6 +2,11 @@ package dev.kotandsraka.visuals;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.DoubleBuffer;
 
 public final class HudLayoutEditor {
     private static final int TARGET = 0;
@@ -48,11 +53,34 @@ public final class HudLayoutEditor {
         return false;
     }
 
+    public static void tick(Minecraft mc) {
+        if (dragging == -1) return;
+        if (!(mc.screen instanceof ChatScreen) || mc.getWindow() == null) {
+            endDrag();
+            return;
+        }
+
+        long handle = mc.getWindow().handle();
+        if (GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_RIGHT) != GLFW.GLFW_PRESS) {
+            endDrag();
+            return;
+        }
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            DoubleBuffer mouseX = stack.mallocDouble(1);
+            DoubleBuffer mouseY = stack.mallocDouble(1);
+            GLFW.glfwGetCursorPos(handle, mouseX, mouseY);
+            double guiX = mouseX.get(0) * mc.getWindow().getGuiScaledWidth() / Math.max(1, mc.getWindow().getWidth());
+            double guiY = mouseY.get(0) * mc.getWindow().getGuiScaledHeight() / Math.max(1, mc.getWindow().getHeight());
+            drag(guiX, guiY, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+        }
+    }
+
     public static boolean isDragging() {
         return dragging != -1;
     }
 
-    public static void drag(double mouseX, double mouseY, int screenWidth, int screenHeight) {
+    private static void drag(double mouseX, double mouseY, int screenWidth, int screenHeight) {
         if (dragging == -1) return;
         VisualConfig cfg = VisualConfig.get();
         switch (dragging) {
@@ -73,11 +101,10 @@ public final class HudLayoutEditor {
         }
     }
 
-    public static boolean endDrag() {
-        if (dragging == -1) return false;
+    public static void endDrag() {
+        if (dragging == -1) return;
         dragging = -1;
         VisualConfig.save();
-        return true;
     }
 
     public static void drawFrame(GuiGraphics graphics, int x, int y, int width, int height, String label) {
