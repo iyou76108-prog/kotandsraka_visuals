@@ -12,6 +12,8 @@ public final class HudLayoutEditor {
     private static final int TARGET = 0;
     private static final int ARMOR = 1;
     private static final int KEYS = 2;
+    private static final int INFO = 3;
+    private static final int MODULES = 4;
 
     private static int dragging = -1;
     private static int offsetX;
@@ -27,10 +29,34 @@ public final class HudLayoutEditor {
         return cfg.keystrokesHudY < 0 ? Math.max(0, mc.getWindow().getGuiScaledHeight() - 70) : cfg.keystrokesHudY;
     }
 
+    public static int modulesX(Minecraft mc, VisualConfig cfg) {
+        return cfg.modulesHudX < 0 ? Math.max(0, mc.getWindow().getGuiScaledWidth() - 112) : cfg.modulesHudX;
+    }
+
     public static boolean beginDrag(double mouseX, double mouseY) {
         VisualConfig cfg = VisualConfig.get();
         if (!cfg.hudEditMode) return false;
         Minecraft mc = Minecraft.getInstance();
+
+        if (cfg.activeModulesHud && VisualHud.activeModuleCount(cfg) > 0) {
+            int x = modulesX(mc, cfg);
+            int y = cfg.modulesHudY;
+            int h = VisualHud.activeModuleCount(cfg) * 11 + 22;
+            if (inside(mouseX, mouseY, x, y, 150, h)) {
+                dragging = MODULES;
+                cfg.modulesHudX = x;
+                offsetX = (int) mouseX - x;
+                offsetY = (int) mouseY - y;
+                return true;
+            }
+        }
+        int infoRows = VisualHud.infoHudLineCount(cfg);
+        if (infoRows > 0 && inside(mouseX, mouseY, cfg.hudX - 5, cfg.hudY - 5, 225, infoRows * 12 + 12)) {
+            dragging = INFO;
+            offsetX = (int) mouseX - (cfg.hudX - 5);
+            offsetY = (int) mouseY - (cfg.hudY - 5);
+            return true;
+        }
 
         if (cfg.keystrokes && inside(mouseX, mouseY, keystrokesX(mc, cfg), keystrokesY(mc, cfg), 78, 68)) {
             dragging = KEYS;
@@ -95,6 +121,14 @@ public final class HudLayoutEditor {
             case KEYS -> {
                 cfg.keystrokesHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - 78));
                 cfg.keystrokesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - 68));
+            }
+            case INFO -> {
+                cfg.hudX = clamp((int) mouseX - offsetX + 5, 0, Math.max(0, screenWidth - 225));
+                cfg.hudY = clamp((int) mouseY - offsetY + 5, 0, Math.max(0, screenHeight - 160));
+            }
+            case MODULES -> {
+                cfg.modulesHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - 150));
+                cfg.modulesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - 200));
             }
             default -> {
             }
