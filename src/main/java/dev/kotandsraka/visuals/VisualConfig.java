@@ -19,6 +19,7 @@ public final class VisualConfig {
     public boolean armorHud = true;
     public boolean playerTrail = true;
     public boolean jumpRings = true;
+    public boolean autoSprint = true;
     public float particleScale = 1.0f;
     public int particleCount = 8;
     public int particleLifetimeMs = 450;
