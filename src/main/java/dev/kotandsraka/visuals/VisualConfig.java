@@ -36,6 +36,9 @@ public final class VisualConfig {
     public boolean worldParticles = true;
     public boolean customFire = true;
     public boolean motionBlur = false;
+    public float motionBlurStrength = 0.55f;
+    public int motionBlurSamples = 4;
+    public boolean viewModelMirror = false;
 
     public boolean fpsHud = true;
     public boolean cpsHud = true;
