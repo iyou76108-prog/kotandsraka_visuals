@@ -7,13 +7,22 @@ import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public final class WorldTrailRenderer {
     private static final Deque<Vec3> TRAIL = new ArrayDeque<>();
+    private static final Map<Integer, Deque<Vec3>> PEARL_TRAILS = new HashMap<>();
 
     private WorldTrailRenderer() {}
 
@@ -24,17 +33,36 @@ public final class WorldTrailRenderer {
     public static void tick() {
         Minecraft mc = Minecraft.getInstance();
         VisualConfig c = VisualConfig.get();
-        if (mc.player == null || mc.level == null || !c.playerTrail) {
+        if (mc.player == null || mc.level == null) {
             TRAIL.clear();
+            PEARL_TRAILS.clear();
             return;
         }
 
-        Vec3 pos = mc.player.position().add(0.0, 0.08, 0.0);
-        if (TRAIL.isEmpty() || TRAIL.peekLast().distanceToSqr(pos) > 0.0004) {
-            TRAIL.addLast(pos);
+        if (c.playerTrail) {
+            Vec3 pos = mc.player.position().add(0.0, 0.08, 0.0);
+            if (TRAIL.isEmpty() || TRAIL.peekLast().distanceToSqr(pos) > 0.0004) TRAIL.addLast(pos);
+            while (TRAIL.size() > Math.max(4, c.trailLength)) TRAIL.removeFirst();
+        } else {
+            TRAIL.clear();
         }
-        while (TRAIL.size() > Math.max(4, c.trailLength)) {
-            TRAIL.removeFirst();
+
+        if (c.pearlTrail) {
+            Set<Integer> active = new HashSet<>();
+            for (Entity entity : mc.level.entitiesForRendering()) {
+                if (entity instanceof Projectile projectile
+                    && projectile.getType() == EntityType.ENDER_PEARL
+                    && projectile.getOwner() == mc.player) {
+                    active.add(entity.getId());
+                    Deque<Vec3> points = PEARL_TRAILS.computeIfAbsent(entity.getId(), id -> new ArrayDeque<>());
+                    Vec3 pos = entity.position();
+                    if (points.isEmpty() || points.peekLast().distanceToSqr(pos) > 0.0001) points.addLast(pos);
+                    while (points.size() > 36) points.removeFirst();
+                }
+            }
+            PEARL_TRAILS.keySet().removeIf(id -> !active.contains(id));
+        } else {
+            PEARL_TRAILS.clear();
         }
     }
 
@@ -42,7 +70,6 @@ public final class WorldTrailRenderer {
         Minecraft mc = Minecraft.getInstance();
         VisualConfig c = VisualConfig.get();
         if (mc.player == null || mc.level == null) return;
-        if (mc.options.getCameraType().isFirstPerson()) return;
 
         MultiBufferSource consumers = context.consumers();
         if (consumers == null) return;
@@ -50,58 +77,101 @@ public final class WorldTrailRenderer {
         Vec3 camera = context.worldState().cameraRenderState.pos;
         PoseStack matrices = context.matrices();
         VertexConsumer line = consumers.getBuffer(RenderTypes.lines());
-
-        if (c.playerTrail && TRAIL.size() >= 2) {
-            matrices.pushPose();
-            matrices.translate(-camera.x, -camera.y, -camera.z);
-            matrices.last().pose();
-            Vec3 previous = null;
-            int index = 0;
-            for (Vec3 point : TRAIL) {
-                if (previous != null) {
-                    int color = c.trailRainbow
-                        ? rainbowColor((index + mc.player.tickCount) * 0.045f, c.trailAlpha)
-                        : 0x66D8FFFF;
-                    drawLine(line, matrices.last(), previous, point, color, c.trailWidth);
-                }
-                previous = point;
-                index++;
-            }
-            matrices.popPose();
-        }
-
-        if (c.chinaHat) {
-            renderChinaHat(mc, c, camera, matrices, line);
-        }
-    }
-
-    private static void renderChinaHat(Minecraft mc, VisualConfig c, Vec3 camera,
-                                       PoseStack matrices, VertexConsumer line) {
         matrices.pushPose();
         matrices.translate(-camera.x, -camera.y, -camera.z);
+        PoseStack.Pose pose = matrices.last();
 
+        if (c.playerTrail && !mc.options.getCameraType().isFirstPerson() && TRAIL.size() >= 2) {
+            drawPath(line, pose, TRAIL, c.trailRainbow ? null : 0xAA56D8FF, c.trailWidth, mc.player.tickCount);
+        }
+
+        if (c.pearlTrail) {
+            for (Deque<Vec3> path : PEARL_TRAILS.values()) {
+                if (path.size() >= 2) drawPath(line, pose, path, 0xDD9A70FF, Math.max(1.5f, c.trailWidth), mc.player.tickCount);
+            }
+        }
+
+        if (c.chinaHat && !mc.options.getCameraType().isFirstPerson()) {
+            renderChinaHat(mc, c, pose, line);
+        }
+
+        if (c.targetEsp) {
+            LivingEntity target = VisualHud.getTarget();
+            if (target != null && target.isAlive()) {
+                drawCircle(line, pose, new Vec3(target.getX(), target.getY() + 0.06, target.getZ()),
+                    Math.max(0.7, target.getBbWidth() * 0.9), 48, VisualConfig.accentColor(), 2.0f);
+                drawCircle(line, pose, new Vec3(target.getX(), target.getY() + target.getBbHeight() + 0.04, target.getZ()),
+                    Math.max(0.7, target.getBbWidth() * 0.9), 48, VisualConfig.accentColor(), 1.5f);
+            }
+        }
+
+        if (c.hitRange) {
+            drawCircle(line, pose, new Vec3(mc.player.getX(), mc.player.getY() + 0.035, mc.player.getZ()),
+                3.0, 64, 0xAA56D8FF, 1.5f);
+        }
+
+        if (c.trajectory) renderTrajectory(mc, pose, line);
+
+        matrices.popPose();
+    }
+
+    private static void renderChinaHat(Minecraft mc, VisualConfig c, PoseStack.Pose pose, VertexConsumer line) {
         double y = mc.player.getY() + mc.player.getBbHeight() + 0.08;
         double radius = Math.max(0.45, mc.player.getBbWidth() * 0.85);
         Vec3 previous = null;
-        int segments = 48;
-
-        for (int i = 0; i <= segments; i++) {
-            double angle = Math.PI * 2.0 * i / segments;
-            Vec3 point = new Vec3(
-                mc.player.getX() + Math.cos(angle) * radius,
-                y,
-                mc.player.getZ() + Math.sin(angle) * radius
-            );
+        for (int i = 0; i <= 48; i++) {
+            double angle = Math.PI * 2.0 * i / 48.0;
+            Vec3 point = new Vec3(mc.player.getX() + Math.cos(angle) * radius,
+                y, mc.player.getZ() + Math.sin(angle) * radius);
             if (previous != null) {
                 int color = c.chromaTheme || c.trailRainbow
-                    ? rainbowColor((i + mc.player.tickCount) * 0.025f, 210)
-                    : 0xD0FFFFFF;
-                drawLine(line, matrices.last(), previous, point, color, Math.max(1.5f, c.trailWidth * 0.75f));
+                    ? rainbowColor((i + mc.player.tickCount) * 0.025f, 220)
+                    : VisualConfig.accentColor();
+                drawLine(line, pose, previous, point, color, Math.max(1.5f, c.trailWidth * 0.75f));
             }
             previous = point;
         }
+    }
 
-        matrices.popPose();
+    private static void renderTrajectory(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
+        Vec3 previous = mc.player.getEyePosition();
+        Vec3 velocity = mc.player.getLookAngle().scale(1.45);
+        for (int i = 0; i < 36; i++) {
+            Vec3 next = previous.add(velocity);
+            int alpha = Math.max(35, 220 - i * 5);
+            int color = (alpha << 24) | (VisualConfig.accentColor() & 0x00FFFFFF);
+            drawLine(line, pose, previous, next, color, 1.6f);
+            previous = next;
+            velocity = velocity.add(0, -0.035, 0).scale(0.99);
+        }
+    }
+
+    private static void drawPath(VertexConsumer line, PoseStack.Pose pose, Deque<Vec3> points,
+                                 Integer fixedColor, float width, int tick) {
+        Vec3 previous = null;
+        int index = 0;
+        for (Vec3 point : points) {
+            if (previous != null) {
+                int color = fixedColor == null
+                    ? rainbowColor((index + tick) * 0.045f, 210)
+                    : fixedColor;
+                drawLine(line, pose, previous, point, color, width);
+            }
+            previous = point;
+            index++;
+        }
+    }
+
+    private static void drawCircle(VertexConsumer line, PoseStack.Pose pose, Vec3 center,
+                                   double radius, int segments, int color, float width) {
+        Vec3 previous = null;
+        for (int i = 0; i <= segments; i++) {
+            double angle = Math.PI * 2.0 * i / segments;
+            Vec3 point = new Vec3(center.x + Math.cos(angle) * radius, center.y,
+                center.z + Math.sin(angle) * radius);
+            if (previous != null) drawLine(line, pose, previous, point, color, width);
+            previous = point;
+        }
     }
 
     private static void drawLine(VertexConsumer consumer, PoseStack.Pose pose,
@@ -110,13 +180,10 @@ public final class WorldTrailRenderer {
         int red = (color >>> 16) & 255;
         int green = (color >>> 8) & 255;
         int blue = color & 255;
-
         consumer.addVertex(pose, (float) a.x, (float) a.y, (float) a.z)
-            .setColor(red, green, blue, alpha)
-            .setLineWidth(width);
+            .setColor(red, green, blue, alpha).setLineWidth(width);
         consumer.addVertex(pose, (float) b.x, (float) b.y, (float) b.z)
-            .setColor(red, green, blue, alpha)
-            .setLineWidth(width);
+            .setColor(red, green, blue, alpha).setLineWidth(width);
     }
 
     private static int rainbowColor(float phase, int alpha) {
@@ -124,8 +191,6 @@ public final class WorldTrailRenderer {
         float g = (float) (Math.sin((phase + 0.3333) * Math.PI * 2.0) * 0.5 + 0.5);
         float b = (float) (Math.sin((phase + 0.6666) * Math.PI * 2.0) * 0.5 + 0.5);
         return (Math.max(0, Math.min(255, alpha)) << 24)
-            | ((int) (r * 255) << 16)
-            | ((int) (g * 255) << 8)
-            | (int) (b * 255);
+            | ((int) (r * 255) << 16) | ((int) (g * 255) << 8) | (int) (b * 255);
     }
 }
