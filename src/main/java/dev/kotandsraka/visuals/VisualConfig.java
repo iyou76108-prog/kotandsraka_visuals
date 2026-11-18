@@ -2,6 +2,7 @@ package dev.kotandsraka.visuals;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -149,7 +150,9 @@ public final class VisualConfig {
     public static void load() {
         try {
             if (Files.exists(FILE)) {
-                INSTANCE = GSON.fromJson(Files.readString(FILE), VisualConfig.class);
+                String json = Files.readString(FILE);
+                boolean legacyConfig = !JsonParser.parseString(json).getAsJsonObject().has("configVersion");
+                INSTANCE = legacyConfig ? new VisualConfig() : GSON.fromJson(json, VisualConfig.class);
             }
         } catch (Exception ignored) {
             INSTANCE = null;
