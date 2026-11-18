@@ -15,6 +15,7 @@ import org.lwjgl.glfw.GLFW;
 public final class KotAndSrakaVisualsClient implements ClientModInitializer {
     public static KeyMapping OPEN_MENU;
     private static boolean wasOnGround = true;
+    private static boolean rightShiftWasDown = false;
 
     @Override
     public void onInitializeClient() {
@@ -25,7 +26,10 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             new KeyMapping.Category(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "main"))
         ));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (OPEN_MENU.consumeClick()) if (client.screen == null) client.setScreen(new VisualConfigScreen(null));
+            boolean rightShiftDown = client.getWindow() != null && GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+            boolean rightShiftPressed = rightShiftDown && !rightShiftWasDown;
+            rightShiftWasDown = rightShiftDown;
+            if ((OPEN_MENU.consumeClick() || rightShiftPressed) && client.screen == null) client.setScreen(new VisualConfigScreen(null));
             if (client.player == null || client.level == null) return;
             WorldTrailRenderer.tick();
             boolean ground = client.player.onGround();
