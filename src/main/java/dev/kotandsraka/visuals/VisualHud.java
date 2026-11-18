@@ -3,8 +3,10 @@ package dev.kotandsraka.visuals;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 public final class VisualHud {
     private static LivingEntity target;
@@ -38,7 +40,27 @@ public final class VisualHud {
                 graphics.guiHeight() / 2 - 32, 0xFFFFFF, true);
         }
         if (cfg.targetHud && target != null) renderTargetHud(graphics, mc);
+        if (cfg.armorHud) renderArmorHud(graphics, mc);
         if (cfg.keystrokes) renderKeystrokes(graphics, mc);
+    }
+
+    private static void renderArmorHud(GuiGraphics g, Minecraft mc) {
+        VisualConfig cfg = VisualConfig.get();
+        int x = cfg.armorHudX;
+        int y = cfg.armorHudY;
+        g.fill(x - 3, y - 3, x + 75, y + 43, 0xA0101010);
+        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+        for (int i = 0; i < slots.length; i++) {
+            ItemStack stack = mc.player.getItemBySlot(slots[i]);
+            g.renderItem(stack, x + i * 18, y);
+            if (!stack.isEmpty() && stack.isDamageableItem()) {
+                int damage = stack.getMaxDamage() - stack.getDamageValue();
+                int max = Math.max(1, stack.getMaxDamage());
+                int width = Math.max(1, (int)(16.0 * damage / max));
+                g.fill(x + i * 18, y + 18, x + i * 18 + 16, y + 20, 0xFF333333);
+                g.fill(x + i * 18, y + 18, x + i * 18 + width, y + 20, 0xFF55DD55);
+            }
+        }
     }
 
     private static void renderTargetHud(GuiGraphics g, Minecraft mc) {
