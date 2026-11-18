@@ -70,6 +70,8 @@ public final class VisualHud {
         trimClicks(LEFT_CLICKS, now);
         trimClicks(RIGHT_CLICKS, now);
 
+        if (now - lastComboHit > 1200L) VisualConfig.get().combo = 0;
+
         if (target != null) {
             float health = Math.max(0.0f, target.getHealth());
             if (health < targetHealthBeforeHit) {
@@ -81,7 +83,7 @@ public final class VisualHud {
                 killHandled = true;
                 if (VisualConfig.get().killEffect) VisualEffects.killEffect(target);
             }
-            if (now > hitUntil + 2500L && killHandled) target = null;
+            if (now > hitUntil + 2500L) target = null;
         }
     }
 
@@ -228,12 +230,12 @@ public final class VisualHud {
 
     private static int countTotems(Minecraft mc) {
         int count = 0;
-        for (ItemStack stack : mc.player.getInventory().items) {
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = mc.player.getInventory().getItem(slot);
             if (stack.is(Items.TOTEM_OF_UNDYING)) count += stack.getCount();
         }
-        for (ItemStack stack : mc.player.getInventory().offhand) {
-            if (stack.is(Items.TOTEM_OF_UNDYING)) count += stack.getCount();
-        }
+        ItemStack offhand = mc.player.getOffhandItem();
+        if (offhand.is(Items.TOTEM_OF_UNDYING)) count += offhand.getCount();
         return count;
     }
 
