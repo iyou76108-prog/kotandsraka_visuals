@@ -3,6 +3,7 @@ package dev.kotandsraka.visuals;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.network.chat.Component;
@@ -27,11 +28,12 @@ public final class VisualHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         long now = System.currentTimeMillis();
+        boolean editingChat = cfg.hudEditMode && mc.screen instanceof ChatScreen;
 
         if (target != null && (!target.isAlive() || now > hitUntil + 1500L)) target = null;
 
         if (cfg.hitFlash && now < hitUntil) {
-            int alpha = (int)Math.min(70, Math.max(0, (hitUntil - now) * 70 / Math.max(1, cfg.particleLifetimeMs)));
+            int alpha = (int) Math.min(70, Math.max(0, (hitUntil - now) * 70 / Math.max(1, cfg.particleLifetimeMs)));
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xFFFFFF);
         }
         if (cfg.hitText && now < hitUntil) {
@@ -39,9 +41,19 @@ public final class VisualHud {
             graphics.drawString(mc.font, text, (graphics.guiWidth() - mc.font.width(text)) / 2,
                 graphics.guiHeight() / 2 - 32, 0xFFFFFF, true);
         }
-        if (cfg.targetHud && target != null) renderTargetHud(graphics, mc);
+
+        if (cfg.targetHud && (target != null || editingChat)) renderTargetHud(graphics, mc, editingChat);
         if (cfg.armorHud) renderArmorHud(graphics, mc);
         if (cfg.keystrokes) renderKeystrokes(graphics, mc);
+
+        if (editingChat) {
+            if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, "TARGET");
+            if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "ARMOR");
+            if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
+                HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "KEYS");
+            graphics.drawCenteredString(mc.font, "HUD EDIT  •  HOLD RIGHT MOUSE TO MOVE  •  RIGHT SHIFT TO FINISH",
+                graphics.guiWidth() / 2, 5, 0xFF68DFFF);
+        }
     }
 
     private static void renderArmorHud(GuiGraphics g, Minecraft mc) {
@@ -56,27 +68,34 @@ public final class VisualHud {
             if (!stack.isEmpty() && stack.isDamageableItem()) {
                 int damage = stack.getMaxDamage() - stack.getDamageValue();
                 int max = Math.max(1, stack.getMaxDamage());
-                int width = Math.max(1, (int)(16.0 * damage / max));
+                int width = Math.max(1, (int) (16.0 * damage / max));
                 g.fill(x + i * 18, y + 18, x + i * 18 + 16, y + 20, 0xFF333333);
                 g.fill(x + i * 18, y + 18, x + i * 18 + width, y + 20, 0xFF55DD55);
             }
         }
     }
 
-    private static void renderTargetHud(GuiGraphics g, Minecraft mc) {
-        int x = 8, y = 8, w = 150, h = 42;
-        g.fill(x, y, x + w, y + h, 0xB0101010);
-        g.drawString(mc.font, target.getName().getString(), x + 7, y + 6, 0xFFFFFF, true);
-        float health = Math.max(0.0F, target.getHealth());
-        float max = Math.max(1.0F, target.getMaxHealth());
-        int bar = (int)((w - 14) * Math.min(1.0F, health / max));
+    private static void renderTargetHud(GuiGraphics g, Minecraft mc, boolean editPreview) {
+        VisualConfig cfg = VisualConfig.get();
+        int x = cfg.targetHudX;
+        int y = cfg.targetHudY;
+        int w = 150;
+        g.fill(x, y, x + w, y + 42, 0xB0101010);
+        String name = target == null ? "Target HUD preview" : target.getName().getString();
+        g.drawString(mc.font, name, x + 7, y + 6, 0xFFFFFF, true);
+        float health = target == null ? 0.75f : Math.max(0.0F, target.getHealth());
+        float max = target == null ? 1.0f : Math.max(1.0F, target.getMaxHealth());
+        int bar = (int) ((w - 14) * Math.min(1.0F, health / max));
         g.fill(x + 7, y + 20, x + w - 7, y + 27, 0xFF333333);
         g.fill(x + 7, y + 20, x + 7 + bar, y + 27, 0xFF55DD55);
-        g.drawString(mc.font, String.format("%.1f / %.1f", health, max), x + 7, y + 30, 0xFFE0E0E0, true);
+        g.drawString(mc.font, target == null ? "Drag to move" : String.format("%.1f / %.1f", health, max),
+            x + 7, y + 30, 0xFFE0E0E0, true);
     }
 
     private static void renderKeystrokes(GuiGraphics g, Minecraft mc) {
-        int x = g.guiWidth() - 82, y = g.guiHeight() - 70;
+        VisualConfig cfg = VisualConfig.get();
+        int x = HudLayoutEditor.keystrokesX(mc, cfg);
+        int y = HudLayoutEditor.keystrokesY(mc, cfg);
         drawKey(g, mc, "W", x + 26, y, mc.options.keyUp.isDown());
         drawKey(g, mc, "A", x, y + 24, mc.options.keyLeft.isDown());
         drawKey(g, mc, "S", x + 26, y + 24, mc.options.keyDown.isDown());
