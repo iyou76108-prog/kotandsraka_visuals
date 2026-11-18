@@ -63,6 +63,11 @@ public final class VisualConfig {
     public int particleLifetimeMs = 450;
     public int armorHudX = 8;
     public int armorHudY = 58;
+    public int targetHudX = 8;
+    public int targetHudY = 8;
+    public int keystrokesHudX = -1;
+    public int keystrokesHudY = -1;
+    public boolean hudEditMode = false;
     public int trailIntensity = 2;
     public int crosshairSize = 6;
     public int crosshairGap = 3;
@@ -102,6 +107,17 @@ public final class VisualConfig {
 
     public static void reset() {
         INSTANCE = new VisualConfig();
+        save();
+    }
+
+    public static void resetHudPositions() {
+        VisualConfig cfg = get();
+        cfg.targetHudX = 8;
+        cfg.targetHudY = 8;
+        cfg.armorHudX = 8;
+        cfg.armorHudY = 58;
+        cfg.keystrokesHudX = -1;
+        cfg.keystrokesHudY = -1;
         save();
     }
 
