@@ -1,23 +1,38 @@
 plugins {
-    id 'net.fabricmc.loom-remap' version "${loom_version}"
+    id 'fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
+
 version = project.mod_version
 group = project.maven_group
-base { archivesName = 'kotandsraka-visuals' }
-repositories { mavenCentral() }
+
+base {
+    archivesName = 'kotandsraka-visuals'
+}
+
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
+
 processResources {
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand 'version': project.version }
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
 }
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 21
     options.encoding = 'UTF-8'
 }
-java { withSourcesJar() }
+
+java {
+    withSourcesJar()
+}
