@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
-    @ModifyVariable(method = "renderHandsWithItems", at = @At("HEAD"), ordinal = 0)
+    @ModifyVariable(method = "renderHandsWithItems", at = @At("HEAD"), ordinal = 1)
     private PoseStack kotandsraka$transformViewModel(PoseStack poseStack) {
         VisualConfig c = VisualConfig.get();
         if (!c.viewModel) return poseStack;
