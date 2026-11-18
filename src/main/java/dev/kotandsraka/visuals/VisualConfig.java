@@ -68,6 +68,18 @@ public final class VisualConfig {
     public int hudY = 110;
     public int combo = 0;
 
+    public float viewModelX = 0.0f;
+    public float viewModelY = 0.0f;
+    public float viewModelZ = 0.0f;
+    public float viewModelScale = 1.0f;
+    public float viewModelRotX = 0.0f;
+    public float viewModelRotY = 0.0f;
+    public float viewModelRotZ = 0.0f;
+    public float trailWidth = 2.5f;
+    public int trailLength = 24;
+    public int trailAlpha = 190;
+    public boolean trailRainbow = false;
+
     private static VisualConfig INSTANCE;
 
     public static void load() {
