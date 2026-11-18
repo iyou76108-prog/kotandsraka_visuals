@@ -12,14 +12,14 @@ public final class HitParticles {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         double x = target.getX(), y = target.getY() + target.getBbHeight() * 0.55, z = target.getZ();
+        boolean crit = mc.player != null && mc.player.fallDistance > 0.0F && !mc.player.onGround();
         for (int i = 0; i < Math.max(1, cfg.particleCount); i++) {
             double dx = (mc.level.random.nextDouble() - 0.5) * 0.45 * cfg.particleScale;
             double dy = mc.level.random.nextDouble() * 0.35 * cfg.particleScale;
             double dz = (mc.level.random.nextDouble() - 0.5) * 0.45 * cfg.particleScale;
             mc.level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, dx, dy, dz);
-            if (cfg.criticalParticles) {
+            if (cfg.criticalParticles && crit)
                 mc.level.addParticle(ParticleTypes.CRIT, x, y, z, dx * 0.5, dy + 0.05, dz * 0.5);
-            }
         }
     }
 }
