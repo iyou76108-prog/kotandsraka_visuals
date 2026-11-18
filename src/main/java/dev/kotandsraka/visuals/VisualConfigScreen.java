@@ -47,6 +47,8 @@ public final class VisualConfigScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("Reset"), b -> { VisualConfig.reset(); rebuild(); }).bounds(right,y,100,20).build());
         } else {
             addRenderableWidget(toggle("Player Trail", cfg.playerTrail, left, y, v -> { cfg.playerTrail=!cfg.playerTrail; VisualConfig.save(); rebuild(); }));
+            y += 30;
+            addRenderableWidget(toggle("Auto Sprint", cfg.autoSprint, left, y, v -> { cfg.autoSprint=!cfg.autoSprint; VisualConfig.save(); rebuild(); }));
             addRenderableWidget(toggle("Jump Rings", cfg.jumpRings, right, y, v -> { cfg.jumpRings=!cfg.jumpRings; VisualConfig.save(); rebuild(); }));
             y += 30;
             addRenderableWidget(Button.builder(Component.literal("Trail Intensity: " + cfg.trailIntensity), b -> { cfg.trailIntensity=cfg.trailIntensity>=5?1:cfg.trailIntensity+1; VisualConfig.save(); rebuild(); }).bounds(left,y,100,20).build());
