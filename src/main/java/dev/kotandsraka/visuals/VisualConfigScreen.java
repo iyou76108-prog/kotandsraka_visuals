@@ -56,10 +56,22 @@ public final class VisualConfigScreen extends Screen {
             y+=28;
             add(left,y,"Motion Blur",c.motionBlur,v->{c.motionBlur=!c.motionBlur;save();});
             add(right,y,"World Particles",c.worldParticles,v->{c.worldParticles=!c.worldParticles;save();});
-            y+=36;
+            y+=34;
+            addButton(left,y,"VM X: "+String.format("%.2f",c.viewModelX),b->{c.viewModelX=next(c.viewModelX,-0.5f,0.05f,0.5f);save();rebuild();});
+            addButton(right,y,"VM Y: "+String.format("%.2f",c.viewModelY),b->{c.viewModelY=next(c.viewModelY,-0.5f,0.05f,0.5f);save();rebuild();});
+            y+=26;
+            addButton(left,y,"VM Z: "+String.format("%.2f",c.viewModelZ),b->{c.viewModelZ=next(c.viewModelZ,-0.5f,0.05f,0.5f);save();rebuild();});
+            addButton(right,y,"VM Scale: "+String.format("%.2f",c.viewModelScale),b->{c.viewModelScale=c.viewModelScale>=1.5f?0.5f:c.viewModelScale+0.1f;save();rebuild();});
+            y+=26;
+            addButton(left,y,"Rot X: "+String.format("%.0f",c.viewModelRotX),b->{c.viewModelRotX=next(c.viewModelRotX,-45f,5f,45f);save();rebuild();});
+            addButton(right,y,"Rot Y: "+String.format("%.0f",c.viewModelRotY),b->{c.viewModelRotY=next(c.viewModelRotY,-45f,5f,45f);save();rebuild();});
+            y+=26;
+            addButton(left,y,"Rot Z: "+String.format("%.0f",c.viewModelRotZ),b->{c.viewModelRotZ=next(c.viewModelRotZ,-45f,5f,45f);save();rebuild();});
+            addButton(right,y,"Reset VM",b->{c.viewModelX=0;c.viewModelY=0;c.viewModelZ=0;c.viewModelScale=1;c.viewModelRotX=0;c.viewModelRotY=0;c.viewModelRotZ=0;save();rebuild();});
+            y+=26;
             addButton(left,y,"Crosshair Size: "+c.crosshairSize,b->{c.crosshairSize=c.crosshairSize>=12?2:c.crosshairSize+2;save();rebuild();});
             addButton(right,y,"Gap: "+c.crosshairGap,b->{c.crosshairGap=c.crosshairGap>=8?0:c.crosshairGap+1;save();rebuild();});
-            y+=28;
+            y+=26;
             addButton(left,y,"Thickness: "+c.crosshairThickness,b->{c.crosshairThickness=c.crosshairThickness>=4?1:c.crosshairThickness+1;save();rebuild();});
         } else if(tab==2){
             add(left,y,"Target HUD",c.targetHud,v->{c.targetHud=!c.targetHud;save();});
@@ -92,10 +104,15 @@ public final class VisualConfigScreen extends Screen {
             add(right,y,"Auto Sprint",c.autoSprint,v->{c.autoSprint=!c.autoSprint;save();});
             y+=28;
             add(left,y,"Jump Rings",c.jumpRings,v->{c.jumpRings=!c.jumpRings;save();});
-            add(right,y,"Trail Intensity",c.trailIntensity>0,v->{c.trailIntensity=c.trailIntensity>=5?1:c.trailIntensity+1;save();rebuild();});
+            addButton(right,y,"Trail Length: "+c.trailLength,b->{c.trailLength=c.trailLength>=48?8:c.trailLength+8;save();rebuild();});
             y+=28;
             add(left,y,"Body Glow",c.bodyGlow,v->{c.bodyGlow=!c.bodyGlow;save();});
             add(right,y,"China Hat",c.chinaHat,v->{c.chinaHat=!c.chinaHat;save();});
+            y+=28;
+            addButton(left,y,"Trail Width: "+String.format("%.1f",c.trailWidth),b->{c.trailWidth=c.trailWidth>=6?1:c.trailWidth+0.5f;save();rebuild();});
+            addButton(right,y,"Rainbow Trail",c.trailRainbow,v->{c.trailRainbow=!c.trailRainbow;save();});
+            y+=28;
+            addButton(left,y,"Trail Intensity: "+c.trailIntensity,b->{c.trailIntensity=c.trailIntensity>=5?1:c.trailIntensity+1;save();rebuild();});
         } else {
             add(left,y,"Glass Menu",c.glassMenu,v->{c.glassMenu=!c.glassMenu;save();});
             add(right,y,"Rounded Corners",c.roundedMenu,v->{c.roundedMenu=!c.roundedMenu;save();});
@@ -109,6 +126,11 @@ public final class VisualConfigScreen extends Screen {
             addButton(left,y,"RESET ALL",b->{VisualConfig.reset();rebuild();});
         }
         addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose()).bounds(cx-50,height-32,100,20).build());
+    }
+
+    private static float next(float value,float min,float step,float max){
+        float next=value+step;
+        return next>max+0.001f?min:next;
     }
 
     private void save(){VisualConfig.save();rebuild();}
