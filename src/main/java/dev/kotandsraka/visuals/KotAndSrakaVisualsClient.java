@@ -19,6 +19,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         VisualConfig.load();
+        WorldTrailRenderer.register();
         OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.kotandsraka_visuals.open_menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT,
             new KeyMapping.Category(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "main"))
@@ -26,6 +27,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (OPEN_MENU.consumeClick()) if (client.screen == null) client.setScreen(new VisualConfigScreen(null));
             if (client.player == null || client.level == null) return;
+            WorldTrailRenderer.tick();
             boolean ground = client.player.onGround();
             VisualConfig cfg = VisualConfig.get();
             if (cfg.autoSprint && client.player.isAlive() && client.player.onGround() && client.player.zza > 0.0F && !client.player.isSprinting()) {
