@@ -142,7 +142,7 @@ public final class HudLayoutEditor {
     }
 
     public static void drawFrame(GuiGraphics graphics, int x, int y, int width, int height, String label) {
-        int color = 0xFF61DFFF;
+        int color = VisualConfig.accentColor();
         graphics.fill(x - 2, y - 2, x + width + 2, y, color);
         graphics.fill(x - 2, y + height, x + width + 2, y + height + 2, color);
         graphics.fill(x - 2, y, x, y + height, color);
