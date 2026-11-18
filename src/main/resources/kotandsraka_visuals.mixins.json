@@ -3,7 +3,8 @@
   "package": "dev.kotandsraka.visuals.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ItemInHandRendererMixin"
+    "ItemInHandRendererMixin",
+    "ScreenHudDragMixin"
   ],
   "injectors": {
     "defaultRequire": 1
