@@ -16,9 +16,15 @@ public final class VisualConfig {
     public boolean keystrokes = true;
     public boolean hitFlash = true;
     public boolean hitText = true;
+    public boolean armorHud = true;
+    public boolean playerTrail = true;
+    public boolean jumpRings = true;
     public float particleScale = 1.0f;
     public int particleCount = 8;
     public int particleLifetimeMs = 450;
+    public int armorHudX = 8;
+    public int armorHudY = 58;
+    public int trailIntensity = 2;
     private static VisualConfig INSTANCE;
 
     public static void load() {
