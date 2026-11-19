@@ -2,14 +2,18 @@ package dev.kotandsraka.visuals;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.Minecraft;
+import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 
 public final class VisualConfigScreen extends Screen {
-    private static final int PINK = 0xFFFF347D;
     private static final int BG = 0xFF111319;
     private static final int SIDEBAR = 0xFF181B23;
     private static final int MODULES_BG = 0xFF20232C;
@@ -21,6 +25,8 @@ public final class VisualConfigScreen extends Screen {
     private String category = "Бой";
     private String selectedId = "hitParticles";
     private int moduleRowHeight = 27;
+    private boolean draggingColorSquare;
+    private boolean draggingHueBar;
 
     private record Feature(String id, String name, String description, boolean enabled, Runnable toggle) {}
 
@@ -222,8 +228,7 @@ public final class VisualConfigScreen extends Screen {
     private void buildSettings(VisualConfig c, Feature feature, int l, int t, int h) {
         if (feature == null) return;
         int x = settingsX() + 12;
-        int colWidth = Math.max(105, (settingsWidth() - 34) / 2);
-        int x2 = x + colWidth + 8;
+        int colWidth = Math.max(150, settingsWidth() - 24);
         int firstY = t + 132;
 
         if (feature.toggle() != null) {
@@ -236,84 +241,77 @@ public final class VisualConfigScreen extends Screen {
 
         switch (feature.id()) {
             case "hitParticles", "criticalParticles" -> {
-                addSetting("КОЛИЧЕСТВО ЧАСТИЦ: " + c.particleCount, x, firstY, colWidth,
-                    () -> c.particleCount = c.particleCount >= 24 ? 2 : c.particleCount + 2);
+                addSlider("КОЛИЧЕСТВО ЧАСТИЦ", x, firstY, colWidth, 2, 24, 2, c.particleCount,
+                    v -> c.particleCount = (int) Math.round(v));
                 addSetting("ФОРМА: " + particleShapeName(c.particleShape), x2, firstY,
                     colWidth, () -> c.particleShape = (c.particleShape + 1) % 3);
-                addSetting("РАЗБРОС: " + fmt(c.particleSpread), x, firstY + 34, colWidth,
-                    () -> c.particleSpread = stepFloat(c.particleSpread, 0.10f, 1.25f, 0.05f));
-                addSetting("СКОРОСТЬ: " + fmt(c.particleSpeed), x2, firstY + 34, colWidth,
-                    () -> c.particleSpeed = stepFloat(c.particleSpeed, 0.02f, 0.50f, 0.02f));
-                addSetting("ВЫСОТА: " + fmt(c.particleHeight), x, firstY + 68, colWidth,
-                    () -> c.particleHeight = stepFloat(c.particleHeight, 0.05f, 1.50f, 0.05f));
-                addSetting("ВРЕМЯ ЖИЗНИ: " + c.particleLifetimeMs + " мс", x2, firstY + 68, colWidth,
-                    () -> c.particleLifetimeMs = c.particleLifetimeMs >= 1200 ? 200 : c.particleLifetimeMs + 100);
-                addSettingToggle("КРИТ. ЧАСТИЦЫ: " + onOff(c.criticalParticles),
-                    x, firstY + 102, colWidth, () -> c.criticalParticles = !c.criticalParticles);
+                addSlider("РАЗБРОС", x, firstY + 68, colWidth, 0.10, 1.25, 0.05, c.particleSpread,
+                    v -> c.particleSpread = v.floatValue());
+                addSlider("СКОРОСТЬ", x, firstY + 102, colWidth, 0.02, 0.50, 0.02, c.particleSpeed,
+                    v -> c.particleSpeed = v.floatValue());
+                addSlider("ВЫСОТА", x, firstY + 136, colWidth, 0.05, 1.50, 0.05, c.particleHeight,
+                    v -> c.particleHeight = v.floatValue());
+                addSlider("ВРЕМЯ ЖИЗНИ", x, firstY + 170, colWidth, 200, 1200, 50, c.particleLifetimeMs,
+                    v -> c.particleLifetimeMs = (int) Math.round(v));
+                addSettingToggle("КРИТИЧЕСКИЕ ЧАСТИЦЫ: " + onOff(c.criticalParticles),
+                    x, firstY + 204, colWidth, () -> c.criticalParticles = !c.criticalParticles);
             }
             case "playerTrail", "pearlTrail", "trailRainbow" -> {
-                addSetting("ШИРИНА СЛЕДА: " + fmt(c.trailWidth), x, firstY, colWidth,
-                    () -> c.trailWidth = stepFloat(c.trailWidth, 1.0f, 5.0f, 0.5f));
+                addSlider("ШИРИНА СЛЕДА", x, firstY, colWidth, 1.0, 5.0, 0.1, c.trailWidth,
+                    v -> c.trailWidth = v.floatValue());
                 addSetting("ДЛИНА СЛЕДА: " + c.trailLength, x2, firstY, colWidth,
                     () -> c.trailLength = c.trailLength >= 80 ? 8 : c.trailLength + 4);
-                addSetting("ПЛОТНОСТЬ СЛЕДА: " + c.trailIntensity, x, firstY + 34, colWidth,
-                    () -> c.trailIntensity = c.trailIntensity >= 8 ? 1 : c.trailIntensity + 1);
-                addSettingToggle("РАДУЖНЫЙ ЦВЕТ: " + onOff(c.trailRainbow), x2, firstY + 34,
+                addSlider("ПЛОТНОСТЬ СЛЕДА", x, firstY + 68, colWidth, 1, 8, 1, c.trailIntensity,
+                    v -> c.trailIntensity = (int) Math.round(v));
+                addSettingToggle("РАДУЖНЫЙ ЦВЕТ: " + onOff(c.trailRainbow), x, firstY + 102,
                     colWidth, () -> c.trailRainbow = !c.trailRainbow);
             }
             case "viewModel" -> {
-                addSetting("ПОЗИЦИЯ X: " + fmt(c.viewModelX), x, firstY, colWidth,
-                    () -> c.viewModelX = stepFloat(c.viewModelX, -0.50f, 0.50f, 0.05f));
-                addSetting("ПОЗИЦИЯ Y: " + fmt(c.viewModelY), x2, firstY, colWidth,
-                    () -> c.viewModelY = stepFloat(c.viewModelY, -0.50f, 0.50f, 0.05f));
-                addSetting("ПОЗИЦИЯ Z: " + fmt(c.viewModelZ), x, firstY + 34, colWidth,
-                    () -> c.viewModelZ = stepFloat(c.viewModelZ, -0.50f, 0.50f, 0.05f));
-                addSetting("МАСШТАБ: " + fmt(c.viewModelScale), x2, firstY + 34, colWidth,
-                    () -> c.viewModelScale = stepFloat(c.viewModelScale, 0.50f, 1.50f, 0.05f));
-                addSetting("ПОВОРОТ X: " + fmt(c.viewModelRotX), x, firstY + 68, colWidth,
-                    () -> c.viewModelRotX = stepFloat(c.viewModelRotX, -180f, 180f, 10f));
-                addSetting("ПОВОРОТ Y: " + fmt(c.viewModelRotY), x2, firstY + 68, colWidth,
-                    () -> c.viewModelRotY = stepFloat(c.viewModelRotY, -180f, 180f, 10f));
-                addSetting("ПОВОРОТ Z: " + fmt(c.viewModelRotZ), x, firstY + 102, colWidth,
-                    () -> c.viewModelRotZ = stepFloat(c.viewModelRotZ, -180f, 180f, 10f));
+                addSlider("ПОЗИЦИЯ X", x, firstY, colWidth, -0.50, 0.50, 0.01, c.viewModelX,
+                    v -> c.viewModelX = v.floatValue());
+                addSlider("ПОЗИЦИЯ Y", x, firstY + 34, colWidth, -0.50, 0.50, 0.01, c.viewModelY,
+                    v -> c.viewModelY = v.floatValue());
+                addSlider("ПОЗИЦИЯ Z", x, firstY + 68, colWidth, -0.50, 0.50, 0.01, c.viewModelZ,
+                    v -> c.viewModelZ = v.floatValue());
+                addSlider("МАСШТАБ", x, firstY + 102, colWidth, 0.50, 1.50, 0.01, c.viewModelScale,
+                    v -> c.viewModelScale = v.floatValue());
+                addSlider("ПОВОРОТ X", x, firstY + 136, colWidth, -180, 180, 1, c.viewModelRotX,
+                    v -> c.viewModelRotX = v.floatValue());
+                addSlider("ПОВОРОТ Y", x, firstY + 170, colWidth, -180, 180, 1, c.viewModelRotY,
+                    v -> c.viewModelRotY = v.floatValue());
+                addSlider("ПОВОРОТ Z", x, firstY + 204, colWidth, -180, 180, 1, c.viewModelRotZ,
+                    v -> c.viewModelRotZ = v.floatValue());
             }
             case "customSwing" -> {
-                addSetting("СКОРОСТЬ ЗАМАХА: " + fmt(c.swingSpeed), x, firstY, colWidth,
-                    () -> c.swingSpeed = stepFloat(c.swingSpeed, 0.50f, 2.50f, 0.25f));
-                addSetting("СИЛА ЗАМАХА: " + fmt(c.swingStrength), x2, firstY, colWidth,
-                    () -> c.swingStrength = stepFloat(c.swingStrength, 0.25f, 1.50f, 0.10f));
-                addSetting("ПОВОРОТ X: " + fmt(c.swingRotationX), x, firstY + 34, colWidth,
-                    () -> c.swingRotationX = stepFloat(c.swingRotationX, -90f, 90f, 5f));
-                addSetting("ПОВОРОТ Y: " + fmt(c.swingRotationY), x2, firstY + 34, colWidth,
-                    () -> c.swingRotationY = stepFloat(c.swingRotationY, -90f, 90f, 5f));
-                addSetting("ПОВОРОТ Z: " + fmt(c.swingRotationZ), x, firstY + 68, colWidth,
-                    () -> c.swingRotationZ = stepFloat(c.swingRotationZ, -90f, 90f, 5f));
+                addSlider("СКОРОСТЬ ЗАМАХА", x, firstY, colWidth, 0.50, 2.50, 0.01, c.swingSpeed,
+                    v -> c.swingSpeed = v.floatValue());
+                addSlider("СИЛА ЗАМАХА", x, firstY + 34, colWidth, 0.25, 1.50, 0.01, c.swingStrength,
+                    v -> c.swingStrength = v.floatValue());
+                addSlider("ПОВОРОТ X", x, firstY + 68, colWidth, -90, 90, 1, c.swingRotationX,
+                    v -> c.swingRotationX = v.floatValue());
+                addSlider("ПОВОРОТ Y", x, firstY + 102, colWidth, -90, 90, 1, c.swingRotationY,
+                    v -> c.swingRotationY = v.floatValue());
+                addSlider("ПОВОРОТ Z", x, firstY + 136, colWidth, -90, 90, 1, c.swingRotationZ,
+                    v -> c.swingRotationZ = v.floatValue());
             }
             case "customCrosshair" -> {
-                addSetting("РАЗМЕР: " + c.crosshairSize, x, firstY, colWidth,
-                    () -> c.crosshairSize = c.crosshairSize >= 16 ? 3 : c.crosshairSize + 1);
-                addSetting("ЗАЗОР: " + c.crosshairGap, x2, firstY, colWidth,
-                    () -> c.crosshairGap = c.crosshairGap >= 12 ? 1 : c.crosshairGap + 1);
-                addSetting("ТОЛЩИНА: " + c.crosshairThickness, x, firstY + 34, colWidth,
-                    () -> c.crosshairThickness = c.crosshairThickness >= 6 ? 1 : c.crosshairThickness + 1);
+                addSlider("РАЗМЕР", x, firstY + 0, colWidth, 3, 16, 1, c.crosshairSize,
+                    v -> c.crosshairSize = (int) Math.round(v));
+                addSlider("ЗАЗОР", x, firstY + 34, colWidth, 1, 12, 1, c.crosshairGap,
+                    v -> c.crosshairGap = (int) Math.round(v));
+                addSlider("ТОЛЩИНА", x, firstY + 68, colWidth, 1, 6, 1, c.crosshairThickness,
+                    v -> c.crosshairThickness = (int) Math.round(v));
             }
             case "theme" -> {
-                String[] palettes = {"БИРЮЗОВЫЙ", "ФИОЛЕТОВЫЙ", "КРАСНЫЙ", "МЯТНЫЙ", "ЗОЛОТОЙ", "РОЗОВЫЙ"};
-                addSetting("ЦВЕТ: " + palettes[Math.floorMod(c.colorPreset, palettes.length)],
-                    x, firstY, colWidth, () -> c.colorPreset = (c.colorPreset + 1) % palettes.length);
-                addSetting("ПРОЗРАЧНОСТЬ HUD: " + Math.round(c.hudOpacity * 100) + "%",
-                    x2, firstY, colWidth, () -> c.hudOpacity = stepFloat(c.hudOpacity, 0.25f, 1.0f, 0.05f));
-                addSettingToggle("ХРОМА: " + onOff(c.chromaTheme), x, firstY + 34,
-                    colWidth, () -> c.chromaTheme = !c.chromaTheme);
-                addSettingToggle("СТЕКЛЯННОЕ МЕНЮ: " + onOff(c.glassMenu), x2, firstY + 34,
-                    colWidth, () -> c.glassMenu = !c.glassMenu);
-                addSettingToggle("АНИМАЦИЯ ЦВЕТА: " + onOff(c.animatedMenu), x, firstY + 68,
-                    colWidth, () -> c.animatedMenu = !c.animatedMenu);
+                addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 205, colWidth, 0.25, 1.0, 0.01,
+                    c.hudOpacity, v -> c.hudOpacity = v.floatValue());
+                addSettingToggle("СТЕКЛЯННОЕ МЕНЮ: " + onOff(c.glassMenu),
+                    x, firstY + 239, colWidth, () -> c.glassMenu = !c.glassMenu);
             }
             case "hudLayout" -> {
                 addSetting("СБРОСИТЬ ПОЗИЦИИ HUD", x, firstY, colWidth, VisualConfig::resetHudPositions);
-                addSetting("ПРОЗРАЧНОСТЬ HUD: " + Math.round(c.hudOpacity * 100) + "%",
-                    x2, firstY, colWidth, () -> c.hudOpacity = stepFloat(c.hudOpacity, 0.25f, 1.0f, 0.05f));
+                addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 34, colWidth, 0.25, 1.0, 0.01,
+                    c.hudOpacity, v -> c.hudOpacity = v.floatValue());
             }
             case "resetConfig" -> addSetting("СБРОСИТЬ НАСТРОЙКИ", x, firstY,
                 colWidth, VisualConfig::reset);
