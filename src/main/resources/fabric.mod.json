@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "kotandsraka_visuals",
   "version": "${version}",
-  "name": "KotAndSraka Visuals",
-  "description": "Client-side Minecraft 1.21.11 PvP visuals inspired by PulseVisual.",
+  "name": "KotCode",
+  "description": "Клиентский визуальный мод для Minecraft 1.21.11.",
   "authors": [
     "kotandsraka_visuals"
   ],
