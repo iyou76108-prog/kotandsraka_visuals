@@ -128,7 +128,7 @@ public final class VisualConfigScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.literal("СБРОСИТЬ ВСЁ"), b -> {
             VisualConfig.reset();
-            selectedId = category.equals("Configs") ? "theme" : selectedId;
+            selectedId = category.equals("Конфиги") ? "theme" : selectedId;
             rebuild();
         }).bounds(l + 12, t + h - 34, 112, 24).build());
 
@@ -176,8 +176,8 @@ public final class VisualConfigScreen extends Screen {
             }
             case "Рендер" -> {
                 add(list, "customCrosshair", "Настраиваемый прицел", "Прицел с выбранным цветовым акцентом", c.customCrosshair, () -> c.customCrosshair = !c.customCrosshair);
-                add(list, "targetEsp", "Обводка цели", "Ring outline around your last target", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
-                add(list, "hitRange", "Дальность удара", "Show the 3-block range circle", c.hitRange, () -> c.hitRange = !c.hitRange);
+                add(list, "targetEsp", "Обводка цели", "Кольцо вокруг последней атакованной цели", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
+                add(list, "hitRange", "Дальность удара", "Показывать круг радиусом 3 блока", c.hitRange, () -> c.hitRange = !c.hitRange);
                 add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
             }
             case "Игрок" -> {
@@ -198,7 +198,7 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "clockHud", "Часы", "Время игрового мира Minecraft", c.clockHud, () -> c.clockHud = !c.clockHud);
                 add(list, "compassHud", "Компас", "Направление взгляда игрока", c.compassHud, () -> c.compassHud = !c.compassHud);
                 add(list, "activeModulesHud", "Активные модули", "Список включённых модулей", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
-                add(list, "comboHud", "Счётчик комбо", "Show consecutive hit count", c.comboHud, () -> c.comboHud = !c.comboHud);
+                add(list, "comboHud", "Счётчик комбо", "Показывать количество последовательных попаданий", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
             case "Конфиги" -> {
                 list.add(new Feature("theme", "Оформление", "Цветовой акцент и внешний вид меню", false, null));
@@ -282,11 +282,11 @@ public final class VisualConfigScreen extends Screen {
                     () -> c.swingSpeed = stepFloat(c.swingSpeed, 0.50f, 2.50f, 0.25f));
                 addSetting("СИЛА ЗАМАХА: " + fmt(c.swingStrength), x2, firstY, colWidth,
                     () -> c.swingStrength = stepFloat(c.swingStrength, 0.25f, 1.50f, 0.10f));
-                addSetting("ROTATION X: " + fmt(c.swingRotationX), x, firstY + 34, colWidth,
+                addSetting("ПОВОРОТ X: " + fmt(c.swingRotationX), x, firstY + 34, colWidth,
                     () -> c.swingRotationX = stepFloat(c.swingRotationX, -90f, 90f, 5f));
-                addSetting("ROTATION Y: " + fmt(c.swingRotationY), x2, firstY + 34, colWidth,
+                addSetting("ПОВОРОТ Y: " + fmt(c.swingRotationY), x2, firstY + 34, colWidth,
                     () -> c.swingRotationY = stepFloat(c.swingRotationY, -90f, 90f, 5f));
-                addSetting("ROTATION Z: " + fmt(c.swingRotationZ), x, firstY + 68, colWidth,
+                addSetting("ПОВОРОТ Z: " + fmt(c.swingRotationZ), x, firstY + 68, colWidth,
                     () -> c.swingRotationZ = stepFloat(c.swingRotationZ, -90f, 90f, 5f));
             }
             case "customCrosshair" -> {
@@ -380,9 +380,9 @@ public final class VisualConfigScreen extends Screen {
         g.fill(sx, t + 52, sx + sw, t + 53, PINK & 0x99FFFFFF);
         g.fill(l + 12, t + h - 40, l + w - 12, t + h - 39, 0x554D5360);
 
-        g.drawString(this.font, "DeadCode", l + 18, t + 17, PINK, true);
-        g.drawString(this.font, "KOTAND SRAKA  /  VISUALS", l + 148, t + 16, TEXT, true);
-        g.drawString(this.font, "CLIENT SETTINGS", l + 148, t + 31, MUTED, false);
+        g.drawString(this.font, "KotCode", l + 18, t + 17, PINK, true);
+        g.drawString(this.font, "KOTCODE  /  ВИЗУАЛЬНЫЙ КЛИЕНТ", l + 148, t + 16, TEXT, true);
+        g.drawString(this.font, "НАСТРОЙКИ КЛИЕНТА", l + 148, t + 31, MUTED, false);
         g.drawString(this.font, category, modulesX() + 7, t + 59, TEXT, true);
 
         List<Feature> features = featuresForCategory(VisualConfig.get());
@@ -420,13 +420,13 @@ public final class VisualConfigScreen extends Screen {
             } else if (selected.id().equals("resetConfig")) {
                 g.drawString(this.font, "Вернуть переключатели и параметры по умолчанию.", sx + 12, t + 133, MUTED, false);
             }
-        } else if (category.equals("Exploit") || category.equals("Friends")) {
+        } else if (category.equals("Эксплойты") || category.equals("Друзья")) {
             g.drawString(this.font, "Здесь пока пусто", sx + 16, t + 80, MUTED, false);
             g.drawString(this.font, "Категория зарезервирована для будущих модулей.", sx + 16, t + 99, MUTED, false);
         }
 
-        g.drawString(this.font, "КОТКОД  •  1.0.5", l + 18, t + h - 55, MUTED, false);
-        g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ НАСТРОЙКИ",
+        g.drawString(this.font, "KOTCODE  •  1.0.5", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ",
             l + 148, t + h - 28, MUTED, false);
 
         super.render(g, mouseX, mouseY, delta);
