@@ -5,8 +5,6 @@
   "client": [
     "ItemInHandRendererMixin",
     "ScreenHudDragMixin",
-    "ScreenEffectRendererInvoker",
-    "ScreenEffectRendererMixin",
     "GameRendererMixin"
   ],
   "injectors": {
