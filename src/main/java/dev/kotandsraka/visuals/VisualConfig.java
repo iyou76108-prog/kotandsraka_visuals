@@ -82,6 +82,10 @@ public final class VisualConfig {
     // Numeric settings
     public float particleScale = 1.0f;
     public int particleCount = 8;
+    public int particleShape = 0;
+    public float particleSpread = 0.45f;
+    public float particleSpeed = 0.12f;
+    public float particleHeight = 0.35f;
     public int particleLifetimeMs = 450;
     public int armorHudX = 8;
     public int armorHudY = 58;
