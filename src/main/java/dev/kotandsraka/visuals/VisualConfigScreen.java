@@ -248,7 +248,7 @@ public final class VisualConfigScreen extends Screen {
                 addSlider("РАЗБРОС", x, firstY + 68, colWidth, 0.10, 1.25, 0.05, c.particleSpread,
                     v -> c.particleSpread = (float) v);
                 addSlider("СКОРОСТЬ", x, firstY + 102, colWidth, 0.02, 0.50, 0.02, c.particleSpeed,
-                    v -> c.particleSpeed = v.floatValue());
+                    v -> c.particleSpeed = (float) v);
                 addSlider("ВЫСОТА", x, firstY + 136, colWidth, 0.05, 1.50, 0.05, c.particleHeight,
                     v -> c.particleHeight = v.floatValue());
                 addSlider("ВРЕМЯ ЖИЗНИ", x, firstY + 170, colWidth, 200, 1200, 50, c.particleLifetimeMs,
@@ -383,7 +383,7 @@ public final class VisualConfigScreen extends Screen {
             int width = getWidth();
             graphics.fill(x, y, x + width, y + getHeight(), 0xFF191D26);
             graphics.drawString(Minecraft.getInstance().font, getMessage(), x + 4, y + 3,
-                isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFE0E2E8, false);
+                0xFFE0E2E8, false);
 
             int trackLeft = x + 5;
             int trackRight = x + width - 5;
@@ -579,7 +579,7 @@ public final class VisualConfigScreen extends Screen {
         g.fill(sx, t + 52, sx + sw, t + h - 43, SETTINGS_BG);
 
         g.fill(l, t, l + w, t + 3, VisualConfig.accentColor());
-        g.fill(l, t, l + 3, t + h, PINK);
+        g.fill(l, t, l + 3, t + h, VisualConfig.accentColor());
         g.fill(sx, t + 52, sx + sw, t + 53, PINK & 0x99FFFFFF);
         g.fill(l + 12, t + h - 40, l + w - 12, t + h - 39, 0x554D5360);
 
@@ -633,8 +633,9 @@ public final class VisualConfigScreen extends Screen {
             l + 148, t + h - 28, MUTED, false);
 
         super.render(g, mouseX, mouseY, delta);
+        drawColorPicker(g);
 
-        // Thin pink edges keep the controls consistent with the reference skin.
+        // Accent edges keep the controls consistent with the selected color.
         for (var child : this.children()) {
             if (child instanceof Button button && button.visible) {
                 int bx = button.getX();
