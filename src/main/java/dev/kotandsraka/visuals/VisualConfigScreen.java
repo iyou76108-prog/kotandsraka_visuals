@@ -89,6 +89,11 @@ public final class VisualConfigScreen extends Screen {
                 VisualConfig.save();
                 rebuild();
             }).bounds(left + 346, top + 330, 110, 24).build());
+            addRenderableWidget(Button.builder(Component.literal("PARTICLE SHAPE: " + particleShapeName(cfg.particleShape)), b -> {
+                cfg.particleShape = (cfg.particleShape + 1) % 3;
+                VisualConfig.save();
+                rebuild();
+            }).bounds(left + 18, top + 304, 150, 24).build());
             addRenderableWidget(Button.builder(Component.literal("TRAIL WIDTH: " + String.format("%.1f", cfg.trailWidth)), b -> {
                 cfg.trailWidth = cfg.trailWidth >= 5.0f ? 1.0f : cfg.trailWidth + 0.5f;
                 VisualConfig.save();
@@ -237,6 +242,14 @@ public final class VisualConfigScreen extends Screen {
     private static float stepFloat(float value, float min, float max, float step) {
         float next = value + step;
         return next > max + 0.0001f ? min : Math.round(next * 100.0f) / 100.0f;
+    }
+
+    private static String particleShapeName(int shape) {
+        return switch (shape) {
+            case 1 -> "RING";
+            case 2 -> "UPWARD";
+            default -> "BURST";
+        };
     }
 
     private void buildThemeTab(VisualConfig cfg, int left, int top) {
