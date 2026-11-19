@@ -311,7 +311,6 @@ public final class VisualHud {
         if (c.autoSprint) list.add("Auto Sprint");
         if (c.skullJump) list.add("Skull Jump");
         if (c.comboHud) list.add("Combo Counter");
-        if (c.motionBlur) list.add("Movement Blur");
         if (c.viewModel) list.add("ViewModel");
         if (c.customSwing) list.add("Custom Swing");
         if (c.customFire) list.add("Custom Fire");
