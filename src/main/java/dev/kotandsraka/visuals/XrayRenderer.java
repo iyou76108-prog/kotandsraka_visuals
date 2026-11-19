@@ -23,6 +23,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4fc;
@@ -74,18 +76,20 @@ public final class XrayRenderer {
             PoseStack matrices = context.matrices();
             Vec3 camera = context.worldState().cameraRenderState.pos;
             matrices.pushPose();
-            matrices.translate(-camera.x, -camera.y, -camera.z);
-
-            if (cfg.playerGlow) renderPlayers(mc, matrices, camera);
-            if (cfg.chestGlow) renderChests(mc, matrices, camera);
-
-            matrices.popPose();
+            try {
+                matrices.translate(-camera.x, -camera.y, -camera.z);
+                if (cfg.playerGlow) renderPlayers(mc, matrices);
+                if (cfg.chestGlow) renderChests(mc, matrices, camera);
+            } finally {
+                matrices.popPose();
+            }
 
             drawIfNeeded(mc);
         } catch (Throwable error) {
             if (builder != null) {
                 try {
-                    builder.discard();
+                    MeshData partial = builder.build();
+                    if (partial != null) partial.close();
                 } catch (Throwable ignored) {
                 }
                 builder = null;
@@ -106,7 +110,7 @@ public final class XrayRenderer {
         return builder;
     }
 
-    private static void renderPlayers(Minecraft mc, PoseStack matrices, Vec3 camera) {
+    private static void renderPlayers(Minecraft mc, PoseStack matrices) {
         int color = VisualConfig.accentColor();
         float red = ((color >> 16) & 255) / 255.0f;
         float green = ((color >> 8) & 255) / 255.0f;
@@ -133,24 +137,35 @@ public final class XrayRenderer {
         BufferBuilder out = getBuilder();
         Matrix4fc matrix = matrices.last().pose();
 
-        for (BlockEntity blockEntity : mc.level.getGloballyRenderedBlockEntities()) {
-            if (blockEntity.isRemoved()) continue;
-            BlockPos pos = blockEntity.getBlockPos();
-            var state = mc.level.getBlockState(pos);
-            if (!state.is(Blocks.CHEST) && !state.is(Blocks.TRAPPED_CHEST) && !state.is(Blocks.ENDER_CHEST)) continue;
+        int centerChunkX = mc.player.getBlockX() >> 4;
+        int centerChunkZ = mc.player.getBlockZ() >> 4;
+        // Query already-loaded chunks only: false prevents the X-ray pass from loading terrain.
+        for (int chunkX = centerChunkX - 4; chunkX <= centerChunkX + 4; chunkX++) {
+            for (int chunkZ = centerChunkZ - 4; chunkZ <= centerChunkZ + 4; chunkZ++) {
+                LevelChunk chunk = mc.level.getChunkSource().getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+                if (chunk == null) continue;
 
-            double dx = pos.getX() + 0.5 - camera.x;
-            double dy = pos.getY() + 0.5 - camera.y;
-            double dz = pos.getZ() + 0.5 - camera.z;
-            if (dx * dx + dy * dy + dz * dz > 64.0 * 64.0) continue;
+                for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                    if (blockEntity.isRemoved()) continue;
+                    BlockPos pos = blockEntity.getBlockPos();
+                    var state = mc.level.getBlockState(pos);
+                    if (!state.is(Blocks.CHEST) && !state.is(Blocks.TRAPPED_CHEST)
+                        && !state.is(Blocks.ENDER_CHEST)) continue;
 
-            float minX = pos.getX() + 0.035f;
-            float minY = pos.getY() + 0.035f;
-            float minZ = pos.getZ() + 0.035f;
-            float maxX = pos.getX() + 0.965f;
-            float maxY = pos.getY() + (state.is(Blocks.ENDER_CHEST) ? 0.90f : 0.88f);
-            float maxZ = pos.getZ() + 0.965f;
-            addFilledBox(out, matrix, minX, minY, minZ, maxX, maxY, maxZ, red, green, blue, 0.30f);
+                    double dx = pos.getX() + 0.5 - camera.x;
+                    double dy = pos.getY() + 0.5 - camera.y;
+                    double dz = pos.getZ() + 0.5 - camera.z;
+                    if (dx * dx + dy * dy + dz * dz > 64.0 * 64.0) continue;
+
+                    float minX = pos.getX() + 0.035f;
+                    float minY = pos.getY() + 0.035f;
+                    float minZ = pos.getZ() + 0.035f;
+                    float maxX = pos.getX() + 0.965f;
+                    float maxY = pos.getY() + (state.is(Blocks.ENDER_CHEST) ? 0.90f : 0.88f);
+                    float maxZ = pos.getZ() + 0.965f;
+                    addFilledBox(out, matrix, minX, minY, minZ, maxX, maxY, maxZ, red, green, blue, 0.30f);
+                }
+            }
         }
     }
 
@@ -198,8 +213,9 @@ public final class XrayRenderer {
 
     private static void drawIfNeeded(Minecraft client) {
         if (builder == null) return;
-        MeshData mesh = builder.buildOrThrow();
+        MeshData mesh = builder.build();
         builder = null;
+        if (mesh == null) return;
         try {
             MeshData.DrawState drawState = mesh.drawState();
             VertexFormat format = drawState.format();
