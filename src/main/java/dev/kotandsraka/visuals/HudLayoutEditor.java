@@ -14,6 +14,7 @@ public final class HudLayoutEditor {
     private static final int KEYS = 2;
     private static final int INFO = 3;
     private static final int MODULES = 4;
+    private static final int EFFECTS = 5;
 
     private static int dragging = -1;
     private static int offsetX;
@@ -30,7 +31,10 @@ public final class HudLayoutEditor {
     }
 
     public static int modulesX(Minecraft mc, VisualConfig cfg) {
-        return cfg.modulesHudX < 0 ? Math.max(0, mc.getWindow().getGuiScaledWidth() - 112) : cfg.modulesHudX;
+        int width = VisualHud.activeModulesWidth(mc, cfg);
+        return cfg.modulesHudX < 0
+            ? Math.max(0, mc.getWindow().getGuiScaledWidth() - width)
+            : cfg.modulesHudX;
     }
 
     public static boolean beginDrag(double mouseX, double mouseY) {
@@ -42,8 +46,9 @@ public final class HudLayoutEditor {
         if (cfg.activeModulesHud && VisualHud.activeModuleCount(cfg) > 0) {
             int x = modulesX(mc, cfg);
             int y = cfg.modulesHudY;
-            int h = VisualHud.activeModuleCount(cfg) * 11 + 22;
-            if (inside(mouseX, mouseY, x, y, 150, h)) {
+            int w = VisualHud.activeModulesWidth(mc, cfg);
+            int h = VisualHud.activeModulesHeight(cfg);
+            if (inside(mouseX, mouseY, x, y, w, h)) {
                 dragging = MODULES;
                 cfg.modulesHudX = x;
                 offsetX = (int) mouseX - x;
@@ -52,13 +57,21 @@ public final class HudLayoutEditor {
             }
         }
         int infoRows = VisualHud.infoHudLineCount(cfg);
-        if (infoRows > 0 && inside(mouseX, mouseY, cfg.hudX - 5, cfg.hudY - 5, 225, infoRows * 12 + 12)) {
+        int infoWidth = VisualHud.infoHudWidth(mc, cfg);
+        if (infoRows > 0 && inside(mouseX, mouseY, cfg.hudX - 5, cfg.hudY - 5, infoWidth, infoRows * 12 + 12)) {
             dragging = INFO;
             offsetX = (int) mouseX - (cfg.hudX - 5);
             offsetY = (int) mouseY - (cfg.hudY - 5);
             return true;
         }
 
+        if (cfg.potionHud && inside(mouseX, mouseY, cfg.effectsHudX, cfg.effectsHudY,
+            VisualHud.effectsHudWidth(mc, cfg), VisualHud.effectsHudHeight(mc, cfg))) {
+            dragging = EFFECTS;
+            offsetX = (int) mouseX - cfg.effectsHudX;
+            offsetY = (int) mouseY - cfg.effectsHudY;
+            return true;
+        }
         if (cfg.keystrokes && inside(mouseX, mouseY, keystrokesX(mc, cfg), keystrokesY(mc, cfg), 78, 68)) {
             dragging = KEYS;
             offsetX = (int) mouseX - keystrokesX(mc, cfg);
@@ -124,12 +137,21 @@ public final class HudLayoutEditor {
                 cfg.keystrokesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - 68));
             }
             case INFO -> {
-                cfg.hudX = clamp((int) mouseX - offsetX + 5, 0, Math.max(0, screenWidth - 225));
+                int width = VisualHud.infoHudWidth(mc, cfg);
+                cfg.hudX = clamp((int) mouseX - offsetX + 5, 0, Math.max(0, screenWidth - width));
                 cfg.hudY = clamp((int) mouseY - offsetY + 5, 0, Math.max(0, screenHeight - 160));
             }
             case MODULES -> {
-                cfg.modulesHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - 150));
-                cfg.modulesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - 200));
+                int width = VisualHud.activeModulesWidth(mc, cfg);
+                int height = VisualHud.activeModulesHeight(cfg);
+                cfg.modulesHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - width));
+                cfg.modulesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - height));
+            }
+            case EFFECTS -> {
+                int width = VisualHud.effectsHudWidth(mc, cfg);
+                int height = VisualHud.effectsHudHeight(mc, cfg);
+                cfg.effectsHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - width));
+                cfg.effectsHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - height));
             }
             default -> {
             }
