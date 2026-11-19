@@ -243,10 +243,10 @@ public final class VisualConfigScreen extends Screen {
             case "hitParticles", "criticalParticles" -> {
                 addSlider("КОЛИЧЕСТВО ЧАСТИЦ", x, firstY, colWidth, 2, 24, 2, c.particleCount,
                     v -> c.particleCount = (int) Math.round(v));
-                addSetting("ФОРМА: " + particleShapeName(c.particleShape), x2, firstY,
+                addSetting("ФОРМА: " + particleShapeName(c.particleShape), x, firstY + 34,
                     colWidth, () -> c.particleShape = (c.particleShape + 1) % 3);
                 addSlider("РАЗБРОС", x, firstY + 68, colWidth, 0.10, 1.25, 0.05, c.particleSpread,
-                    v -> c.particleSpread = v.floatValue());
+                    v -> c.particleSpread = (float) v);
                 addSlider("СКОРОСТЬ", x, firstY + 102, colWidth, 0.02, 0.50, 0.02, c.particleSpeed,
                     v -> c.particleSpeed = v.floatValue());
                 addSlider("ВЫСОТА", x, firstY + 136, colWidth, 0.05, 1.50, 0.05, c.particleHeight,
@@ -259,8 +259,8 @@ public final class VisualConfigScreen extends Screen {
             case "playerTrail", "pearlTrail", "trailRainbow" -> {
                 addSlider("ШИРИНА СЛЕДА", x, firstY, colWidth, 1.0, 5.0, 0.1, c.trailWidth,
                     v -> c.trailWidth = v.floatValue());
-                addSetting("ДЛИНА СЛЕДА: " + c.trailLength, x2, firstY, colWidth,
-                    () -> c.trailLength = c.trailLength >= 80 ? 8 : c.trailLength + 4);
+                addSlider("ДЛИНА СЛЕДА", x, firstY + 34, colWidth, 8, 80, 1, c.trailLength,
+                    v -> c.trailLength = (int) Math.round(v));
                 addSlider("ПЛОТНОСТЬ СЛЕДА", x, firstY + 68, colWidth, 1, 8, 1, c.trailIntensity,
                     v -> c.trailIntensity = (int) Math.round(v));
                 addSettingToggle("РАДУЖНЫЙ ЦВЕТ: " + onOff(c.trailRainbow), x, firstY + 102,
@@ -321,6 +321,211 @@ public final class VisualConfigScreen extends Screen {
         }
     }
 
+    private void addSlider(String label, int x, int y, int width,
+                            double min, double max, double step, double initial,
+                            DoubleConsumer setter) {
+        addRenderableWidget(new ValueSlider(x, y, width, label, min, max, step, initial, setter));
+    }
+
+    private static final class ValueSlider extends AbstractSliderButton {
+        private final String label;
+        private final double min;
+        private final double max;
+        private final double step;
+        private final DoubleConsumer setter;
+
+        private ValueSlider(int x, int y, int width, String label,
+                            double min, double max, double step, double initial,
+                            DoubleConsumer setter) {
+            super(x, y, width, 28, Component.literal(label), normalize(initial, min, max));
+            this.label = label;
+            this.min = min;
+            this.max = max;
+            this.step = step;
+            this.setter = setter;
+            updateMessage();
+        }
+
+        private static double normalize(double value, double min, double max) {
+            if (max <= min) return 0.0;
+            return Math.max(0.0, Math.min(1.0, (value - min) / (max - min)));
+        }
+
+        private double actualValue() {
+            double raw = min + value * (max - min);
+            double snapped = min + Math.round((raw - min) / step) * step;
+            return Math.max(min, Math.min(max, snapped));
+        }
+
+        @Override
+        protected void updateMessage() {
+            double current = actualValue();
+            String formatted = step >= 1.0 ? String.format("%.0f", current)
+                : step >= 0.1 ? String.format("%.1f", current) : String.format("%.2f", current);
+            setMessage(Component.literal(label + "   " + formatted));
+        }
+
+        @Override
+        protected void applyValue() {
+            setter.accept(actualValue());
+        }
+
+        @Override
+        public void onRelease(MouseButtonEvent click) {
+            super.onRelease(click);
+            VisualConfig.save();
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            int x = getX();
+            int y = getY();
+            int width = getWidth();
+            graphics.fill(x, y, x + width, y + getHeight(), 0xFF191D26);
+            graphics.drawString(Minecraft.getInstance().font, getMessage(), x + 4, y + 3,
+                isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFE0E2E8, false);
+
+            int trackLeft = x + 5;
+            int trackRight = x + width - 5;
+            int trackY = y + 20;
+            int trackWidth = Math.max(1, trackRight - trackLeft);
+            int filled = (int) Math.round(trackWidth * value);
+            graphics.fill(trackLeft, trackY, trackRight, trackY + 3, 0xFF414652);
+            graphics.fill(trackLeft, trackY, trackLeft + filled, trackY + 3, VisualConfig.accentColor());
+            int knobX = trackLeft + filled;
+            graphics.fill(knobX - 3, trackY - 4, knobX + 4, trackY + 7, 0xFFF7F4F8);
+            graphics.fill(knobX - 2, trackY - 3, knobX + 3, trackY + 6, VisualConfig.accentColor());
+        }
+    }
+
+    private int pickerX() {
+        return settingsX() + 14;
+    }
+
+    private int pickerY() {
+        return top() + 148;
+    }
+
+    private int pickerWidth() {
+        return Math.max(180, Math.min(320, settingsWidth() - 28));
+    }
+
+    private int pickerHeight() {
+        return 118;
+    }
+
+    private int hueBarY() {
+        return pickerY() + pickerHeight() + 12;
+    }
+
+    private static boolean inside(double x, double y, int left, int top, int width, int height) {
+        return x >= left && x <= left + width && y >= top && y <= top + height;
+    }
+
+    private void updateColorPicker(double mouseX, double mouseY, boolean hue) {
+        VisualConfig cfg = VisualConfig.get();
+        if (hue) {
+            float amount = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
+            cfg.colorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
+        } else {
+            float saturation = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
+            float value = 1.0f - (float) ((mouseY - pickerY()) / Math.max(1.0, pickerHeight()));
+            cfg.colorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
+            cfg.colorValue = Math.max(0.0f, Math.min(1.0f, value));
+        }
+    }
+
+    private void drawColorPicker(GuiGraphics graphics) {
+        if (!"theme".equals(selectedId)) return;
+
+        VisualConfig cfg = VisualConfig.get();
+        int x = pickerX();
+        int y = pickerY();
+        int width = pickerWidth();
+        int height = pickerHeight();
+
+        graphics.drawString(this.font, "ВЫБОР ЦВЕТА", x, y - 18, VisualConfig.accentColor(), true);
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF080A0F);
+
+        int columns = 64;
+        int rows = 24;
+        for (int column = 0; column < columns; column++) {
+            int x1 = x + column * width / columns;
+            int x2 = x + (column + 1) * width / columns;
+            float saturation = (column + 0.5f) / columns;
+            for (int row = 0; row < rows; row++) {
+                int y1 = y + row * height / rows;
+                int y2 = y + (row + 1) * height / rows;
+                float value = 1.0f - (row + 0.5f) / rows;
+                graphics.fill(x1, y1, x2, y2,
+                    VisualConfig.hsvToRgb(cfg.colorHue, saturation, value));
+            }
+        }
+
+        int cursorX = x + Math.round(cfg.colorSaturation * width);
+        int cursorY = y + Math.round((1.0f - cfg.colorValue) * height);
+        graphics.fill(cursorX - 4, cursorY - 4, cursorX + 5, cursorY + 5, 0xFF101116);
+        graphics.fill(cursorX - 2, cursorY - 2, cursorX + 3, cursorY + 3, 0xFFFFFFFF);
+
+        int hueY = hueBarY();
+        int segments = 72;
+        for (int i = 0; i < segments; i++) {
+            int x1 = x + i * width / segments;
+            int x2 = x + (i + 1) * width / segments;
+            graphics.fill(x1, hueY, x2, hueY + 10,
+                VisualConfig.hsvToRgb(i * 360.0f / segments, 1.0f, 1.0f));
+        }
+        int hueX = x + Math.round(cfg.colorHue / 360.0f * width);
+        graphics.fill(hueX - 3, hueY - 2, hueX + 4, hueY + 12, 0xFFFFFFFF);
+        graphics.fill(hueX - 1, hueY, hueX + 2, hueY + 10,
+            VisualConfig.hsvToRgb(cfg.colorHue, 1.0f, 1.0f));
+
+        int color = VisualConfig.accentColor();
+        String hex = String.format("#%02X%02X%02X", (color >> 16) & 255, (color >> 8) & 255, color & 255);
+        String rgb = String.format("RGB  %d, %d, %d", (color >> 16) & 255, (color >> 8) & 255, color & 255);
+        int textY = hueY + 18;
+        graphics.fill(x, textY - 3, x + Math.min(width, 108), textY + 15, 0xFF12151C);
+        graphics.drawString(this.font, hex, x + 7, textY, 0xFFF4F2F6, false);
+        graphics.drawString(this.font, rgb, x + 120, textY, 0xFFB7BBC5, false);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+        if (GLFW.GLFW_MOUSE_BUTTON_LEFT == click.button() && "theme".equals(selectedId)) {
+            if (inside(click.x(), click.y(), pickerX(), pickerY(), pickerWidth(), pickerHeight())) {
+                draggingColorSquare = true;
+                updateColorPicker(click.x(), click.y(), false);
+                return true;
+            }
+            if (inside(click.x(), click.y(), pickerX(), hueBarY(), pickerWidth(), 10)) {
+                draggingHueBar = true;
+                updateColorPicker(click.x(), click.y(), true);
+                return true;
+            }
+        }
+        return super.mouseClicked(click, doubled);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent click, double dragX, double dragY) {
+        if (draggingColorSquare || draggingHueBar) {
+            updateColorPicker(click.x(), click.y(), draggingHueBar);
+            return true;
+        }
+        return super.mouseDragged(click, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent click) {
+        if (draggingColorSquare || draggingHueBar) {
+            draggingColorSquare = false;
+            draggingHueBar = false;
+            VisualConfig.save();
+            return true;
+        }
+        return super.mouseReleased(click);
+    }
+
     private void addSetting(String label, int x, int y, int width, Runnable action) {
         addRenderableWidget(Button.builder(Component.literal(label), b -> {
             action.run();
@@ -373,7 +578,7 @@ public final class VisualConfigScreen extends Screen {
         g.fill(l + 136, t + 52, l + 136 + modulesWidth() + 2, t + h - 43, MODULES_BG);
         g.fill(sx, t + 52, sx + sw, t + h - 43, SETTINGS_BG);
 
-        g.fill(l, t, l + w, t + 3, PINK);
+        g.fill(l, t, l + w, t + 3, VisualConfig.accentColor());
         g.fill(l, t, l + 3, t + h, PINK);
         g.fill(sx, t + 52, sx + sw, t + 53, PINK & 0x99FFFFFF);
         g.fill(l + 12, t + h - 40, l + w - 12, t + h - 39, 0x554D5360);
@@ -436,7 +641,7 @@ public final class VisualConfigScreen extends Screen {
                 int by = button.getY();
                 int bw = button.getWidth();
                 int bh = button.getHeight();
-                g.fill(bx, by, bx + bw, by + 1, 0xAAFF78A5);
+                g.fill(bx, by, bx + bw, by + 1, (VisualConfig.accentColor() & 0xAAFFFFFF));
                 g.fill(bx, by + bh - 1, bx + bw, by + bh, 0xAAFF78A5);
             }
         }
