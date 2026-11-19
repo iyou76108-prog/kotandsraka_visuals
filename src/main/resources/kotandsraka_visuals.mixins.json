@@ -6,7 +6,8 @@
     "ItemInHandRendererMixin",
     "ScreenHudDragMixin",
     "ScreenEffectRendererInvoker",
-    "ScreenEffectRendererMixin"
+    "ScreenEffectRendererMixin",
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
