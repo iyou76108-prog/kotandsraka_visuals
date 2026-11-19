@@ -1,6 +1,8 @@
 package dev.kotandsraka.visuals;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
@@ -21,7 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 public final class WorldTrailRenderer {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final Deque<Vec3> TRAIL = new ArrayDeque<>();
+    private static boolean renderFailed = false;
     private static final Map<Integer, Deque<Vec3>> PEARL_TRAILS = new HashMap<>();
 
     private WorldTrailRenderer() {}
@@ -69,15 +73,21 @@ public final class WorldTrailRenderer {
     private static void render(WorldRenderContext context) {
         Minecraft mc = Minecraft.getInstance();
         VisualConfig c = VisualConfig.get();
-        if (mc.player == null || mc.level == null) return;
+        if (renderFailed || mc.player == null || mc.level == null) return;
 
-        MultiBufferSource consumers = context.consumers();
-        if (consumers == null) return;
+        // Do not touch render state at all when every world renderer is disabled.
+        if (!c.playerTrail && !c.pearlTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory) return;
 
-        Vec3 camera = context.worldState().cameraRenderState.pos;
-        PoseStack matrices = context.matrices();
-        VertexConsumer line = consumers.getBuffer(RenderTypes.lines());
-        matrices.pushPose();
+        try {
+            MultiBufferSource consumers = context.consumers();
+            PoseStack matrices = context.matrices();
+            if (consumers == null || matrices == null || context.worldState() == null
+                || context.worldState().cameraRenderState == null
+                || context.worldState().cameraRenderState.pos == null) return;
+
+            Vec3 camera = context.worldState().cameraRenderState.pos;
+            VertexConsumer line = consumers.getBuffer(RenderTypes.lines());
+            matrices.pushPose();
         matrices.translate(-camera.x, -camera.y, -camera.z);
         PoseStack.Pose pose = matrices.last();
 
@@ -112,7 +122,14 @@ public final class WorldTrailRenderer {
 
         if (c.trajectory) renderTrajectory(mc, pose, line);
 
-        matrices.popPose();
+            matrices.popPose();
+        } catch (RuntimeException exception) {
+            // A bad render context must never take down the whole client while joining a world.
+            renderFailed = true;
+            TRAIL.clear();
+            PEARL_TRAILS.clear();
+            LOGGER.error("KotAndSraka Visuals disabled its world renderer after a render error", exception);
+        }
     }
 
     private static void renderChinaHat(Minecraft mc, VisualConfig c, PoseStack.Pose pose, VertexConsumer line) {
