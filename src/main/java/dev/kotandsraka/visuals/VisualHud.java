@@ -337,7 +337,7 @@ public final class VisualHud {
         return activeModules(cfg).size() * 12 + 20;
     }
 
-    private static int infoHudWidth(Minecraft mc, VisualConfig cfg) {
+    public static int infoHudWidth(Minecraft mc, VisualConfig cfg) {
         List<String> lines = infoHudLines(mc, cfg);
         int width = 0;
         for (String line : lines) width = Math.max(width, mc.font.width(line));
