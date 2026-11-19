@@ -123,6 +123,7 @@ public final class HudLayoutEditor {
     private static void drag(double mouseX, double mouseY, int screenWidth, int screenHeight) {
         if (dragging == -1) return;
         VisualConfig cfg = VisualConfig.get();
+        Minecraft mc = Minecraft.getInstance();
         switch (dragging) {
             case TARGET -> {
                 cfg.targetHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - 150));
