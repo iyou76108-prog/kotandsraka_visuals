@@ -32,9 +32,8 @@ public final class HudLayoutEditor {
 
     public static int modulesX(Minecraft mc, VisualConfig cfg) {
         int width = VisualHud.activeModulesWidth(mc, cfg);
-        return cfg.modulesHudX < 0
-            ? Math.max(0, mc.getWindow().getGuiScaledWidth() - width)
-            : cfg.modulesHudX;
+        int maxX = Math.max(0, mc.getWindow().getGuiScaledWidth() - width);
+        return cfg.modulesHudX < 0 ? maxX : clamp(cfg.modulesHudX, 0, maxX);
     }
 
     public static boolean beginDrag(double mouseX, double mouseY) {
