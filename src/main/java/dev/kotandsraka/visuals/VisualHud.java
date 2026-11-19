@@ -176,7 +176,7 @@ public final class VisualHud {
                 }
             }
         }
-        g.drawCenteredString(Minecraft.getInstance().font, "JUMP", x + 13, y + 28, VisualConfig.mutedColor());
+        g.drawCenteredString(Minecraft.getInstance().font, "ПРЫЖОК", x + 13, y + 28, VisualConfig.mutedColor());
     }
 
     private static void renderCrosshair(GuiGraphics g, Minecraft mc) {
