@@ -14,7 +14,7 @@ public abstract class ScreenHudDragMixin {
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void kotandsraka$beginHudDrag(MouseButtonEvent click, boolean doubled,
                                           CallbackInfoReturnable<Boolean> cir) {
-        if (click.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT
+        if (click.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
             && HudLayoutEditor.beginDrag(click.x(), click.y())) {
             cir.setReturnValue(true);
         }
