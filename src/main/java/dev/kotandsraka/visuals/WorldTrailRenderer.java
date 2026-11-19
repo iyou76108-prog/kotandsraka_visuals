@@ -76,7 +76,7 @@ public final class WorldTrailRenderer {
         if (renderFailed || mc.player == null || mc.level == null) return;
 
         // Do not touch render state at all when every world renderer is disabled.
-        if (!c.playerTrail && !c.pearlTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory) return;
+        if (!c.playerTrail && !c.pearlTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory && !c.arrowTrajectory) return;
 
         try {
             MultiBufferSource consumers = context.consumers();
@@ -121,6 +121,7 @@ public final class WorldTrailRenderer {
         }
 
         if (c.trajectory) renderTrajectory(mc, pose, line);
+        if (c.arrowTrajectory) renderOwnedArrows(mc, pose, line);
 
             matrices.popPose();
         } catch (RuntimeException exception) {
@@ -160,6 +161,27 @@ public final class WorldTrailRenderer {
             drawLine(line, pose, previous, next, color, 1.6f);
             previous = next;
             velocity = velocity.add(0, -0.035, 0).scale(0.99);
+        }
+    }
+
+    private static void renderOwnedArrows(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Projectile projectile)
+                || projectile.getType() != EntityType.ARROW
+                || projectile.getOwner() != mc.player) continue;
+
+            Vec3 previous = entity.position().add(0.0, 0.12, 0.0);
+            Vec3 velocity = projectile.getDeltaMovement();
+            if (velocity.lengthSqr() < 0.0001) continue;
+
+            for (int i = 0; i < 28; i++) {
+                Vec3 next = previous.add(velocity);
+                int alpha = Math.max(35, 220 - i * 6);
+                int color = (alpha << 24) | (VisualConfig.accentColor() & 0x00FFFFFF);
+                drawLine(line, pose, previous, next, color, 1.4f);
+                previous = next;
+                velocity = velocity.add(0.0, -0.05, 0.0).scale(0.99);
+            }
         }
     }
 
