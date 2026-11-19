@@ -35,8 +35,9 @@ public final class HudLayoutEditor {
 
     public static boolean beginDrag(double mouseX, double mouseY) {
         VisualConfig cfg = VisualConfig.get();
-        if (!cfg.hudEditMode) return false;
         Minecraft mc = Minecraft.getInstance();
+        // HUD elements can be repositioned directly in chat; no separate editor toggle is needed.
+        if (!(mc.screen instanceof ChatScreen)) return false;
 
         if (cfg.activeModulesHud && VisualHud.activeModuleCount(cfg) > 0) {
             int x = modulesX(mc, cfg);
@@ -87,7 +88,7 @@ public final class HudLayoutEditor {
         }
 
         long handle = mc.getWindow().handle();
-        if (GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_RIGHT) != GLFW.GLFW_PRESS) {
+        if (GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
             endDrag();
             return;
         }
