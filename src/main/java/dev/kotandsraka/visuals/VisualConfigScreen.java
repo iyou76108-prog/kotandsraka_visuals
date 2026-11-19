@@ -250,7 +250,7 @@ public final class VisualConfigScreen extends Screen {
                 addSlider("СКОРОСТЬ", x, firstY + 102, colWidth, 0.02, 0.50, 0.02, c.particleSpeed,
                     v -> c.particleSpeed = (float) v);
                 addSlider("ВЫСОТА", x, firstY + 136, colWidth, 0.05, 1.50, 0.05, c.particleHeight,
-                    v -> c.particleHeight = v.floatValue());
+                    v -> c.particleHeight = (float) v);
                 addSlider("ВРЕМЯ ЖИЗНИ", x, firstY + 170, colWidth, 200, 1200, 50, c.particleLifetimeMs,
                     v -> c.particleLifetimeMs = (int) Math.round(v));
                 addSettingToggle("КРИТИЧЕСКИЕ ЧАСТИЦЫ: " + onOff(c.criticalParticles),
@@ -258,7 +258,7 @@ public final class VisualConfigScreen extends Screen {
             }
             case "playerTrail", "pearlTrail", "trailRainbow" -> {
                 addSlider("ШИРИНА СЛЕДА", x, firstY, colWidth, 1.0, 5.0, 0.1, c.trailWidth,
-                    v -> c.trailWidth = v.floatValue());
+                    v -> c.trailWidth = (float) v);
                 addSlider("ДЛИНА СЛЕДА", x, firstY + 34, colWidth, 8, 80, 1, c.trailLength,
                     v -> c.trailLength = (int) Math.round(v));
                 addSlider("ПЛОТНОСТЬ СЛЕДА", x, firstY + 68, colWidth, 1, 8, 1, c.trailIntensity,
@@ -268,31 +268,31 @@ public final class VisualConfigScreen extends Screen {
             }
             case "viewModel" -> {
                 addSlider("ПОЗИЦИЯ X", x, firstY, colWidth, -0.50, 0.50, 0.01, c.viewModelX,
-                    v -> c.viewModelX = v.floatValue());
+                    v -> c.viewModelX = (float) v);
                 addSlider("ПОЗИЦИЯ Y", x, firstY + 34, colWidth, -0.50, 0.50, 0.01, c.viewModelY,
-                    v -> c.viewModelY = v.floatValue());
+                    v -> c.viewModelY = (float) v);
                 addSlider("ПОЗИЦИЯ Z", x, firstY + 68, colWidth, -0.50, 0.50, 0.01, c.viewModelZ,
-                    v -> c.viewModelZ = v.floatValue());
+                    v -> c.viewModelZ = (float) v);
                 addSlider("МАСШТАБ", x, firstY + 102, colWidth, 0.50, 1.50, 0.01, c.viewModelScale,
-                    v -> c.viewModelScale = v.floatValue());
+                    v -> c.viewModelScale = (float) v);
                 addSlider("ПОВОРОТ X", x, firstY + 136, colWidth, -180, 180, 1, c.viewModelRotX,
-                    v -> c.viewModelRotX = v.floatValue());
+                    v -> c.viewModelRotX = (float) v);
                 addSlider("ПОВОРОТ Y", x, firstY + 170, colWidth, -180, 180, 1, c.viewModelRotY,
-                    v -> c.viewModelRotY = v.floatValue());
+                    v -> c.viewModelRotY = (float) v);
                 addSlider("ПОВОРОТ Z", x, firstY + 204, colWidth, -180, 180, 1, c.viewModelRotZ,
-                    v -> c.viewModelRotZ = v.floatValue());
+                    v -> c.viewModelRotZ = (float) v);
             }
             case "customSwing" -> {
                 addSlider("СКОРОСТЬ ЗАМАХА", x, firstY, colWidth, 0.50, 2.50, 0.01, c.swingSpeed,
-                    v -> c.swingSpeed = v.floatValue());
+                    v -> c.swingSpeed = (float) v);
                 addSlider("СИЛА ЗАМАХА", x, firstY + 34, colWidth, 0.25, 1.50, 0.01, c.swingStrength,
-                    v -> c.swingStrength = v.floatValue());
+                    v -> c.swingStrength = (float) v);
                 addSlider("ПОВОРОТ X", x, firstY + 68, colWidth, -90, 90, 1, c.swingRotationX,
-                    v -> c.swingRotationX = v.floatValue());
+                    v -> c.swingRotationX = (float) v);
                 addSlider("ПОВОРОТ Y", x, firstY + 102, colWidth, -90, 90, 1, c.swingRotationY,
-                    v -> c.swingRotationY = v.floatValue());
+                    v -> c.swingRotationY = (float) v);
                 addSlider("ПОВОРОТ Z", x, firstY + 136, colWidth, -90, 90, 1, c.swingRotationZ,
-                    v -> c.swingRotationZ = v.floatValue());
+                    v -> c.swingRotationZ = (float) v);
             }
             case "customCrosshair" -> {
                 addSlider("РАЗМЕР", x, firstY + 0, colWidth, 3, 16, 1, c.crosshairSize,
@@ -304,14 +304,14 @@ public final class VisualConfigScreen extends Screen {
             }
             case "theme" -> {
                 addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 205, colWidth, 0.25, 1.0, 0.01,
-                    c.hudOpacity, v -> c.hudOpacity = v.floatValue());
+                    c.hudOpacity, v -> c.hudOpacity = (float) v);
                 addSettingToggle("СТЕКЛЯННОЕ МЕНЮ: " + onOff(c.glassMenu),
                     x, firstY + 239, colWidth, () -> c.glassMenu = !c.glassMenu);
             }
             case "hudLayout" -> {
                 addSetting("СБРОСИТЬ ПОЗИЦИИ HUD", x, firstY, colWidth, VisualConfig::resetHudPositions);
                 addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 34, colWidth, 0.25, 1.0, 0.01,
-                    c.hudOpacity, v -> c.hudOpacity = v.floatValue());
+                    c.hudOpacity, v -> c.hudOpacity = (float) v);
             }
             case "resetConfig" -> addSetting("СБРОСИТЬ НАСТРОЙКИ", x, firstY,
                 colWidth, VisualConfig::reset);
@@ -377,7 +377,7 @@ public final class VisualConfigScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             int x = getX();
             int y = getY();
             int width = getWidth();
@@ -580,10 +580,10 @@ public final class VisualConfigScreen extends Screen {
 
         g.fill(l, t, l + w, t + 3, VisualConfig.accentColor());
         g.fill(l, t, l + 3, t + h, VisualConfig.accentColor());
-        g.fill(sx, t + 52, sx + sw, t + 53, PINK & 0x99FFFFFF);
+        g.fill(sx, t + 52, sx + sw, t + 53, VisualConfig.accentColor() & 0x99FFFFFF);
         g.fill(l + 12, t + h - 40, l + w - 12, t + h - 39, 0x554D5360);
 
-        g.drawString(this.font, "KotCode", l + 18, t + 17, PINK, true);
+        g.drawString(this.font, "KotCode", l + 18, t + 17, VisualConfig.accentColor(), true);
         g.drawString(this.font, "KOTCODE  /  ВИЗУАЛЬНЫЙ КЛИЕНТ", l + 148, t + 16, TEXT, true);
         g.drawString(this.font, "НАСТРОЙКИ КЛИЕНТА", l + 148, t + 31, MUTED, false);
         g.drawString(this.font, category, modulesX() + 7, t + 59, TEXT, true);
@@ -600,7 +600,7 @@ public final class VisualConfigScreen extends Screen {
                     g.fill(modulesX() + 3, y - 1, modulesX() + modulesWidth() - 3,
                         y + moduleRowHeight - 2, 0xAA4A2435);
                     g.fill(modulesX() + 3, y - 1, modulesX() + 6,
-                        y + moduleRowHeight - 2, PINK);
+                        y + moduleRowHeight - 2, VisualConfig.accentColor());
                 }
             }
         }
@@ -611,7 +611,7 @@ public final class VisualConfigScreen extends Screen {
                 sx + 12, t + 62, TEXT, true);
             g.drawString(this.font, selected.description(), sx + 12, t + 83, MUTED, false);
             g.fill(sx + 12, t + 99, sx + sw - 12, t + 100, 0x664D5360);
-            g.drawString(this.font, "НАСТРОЙКИ", sx + 12, t + 111, PINK, true);
+            g.drawString(this.font, "НАСТРОЙКИ", sx + 12, t + 111, VisualConfig.accentColor(), true);
             if (selected.toggle() == null) {
                 g.drawString(this.font, "Выберите параметр ниже.", sx + 12, t + 128, MUTED, false);
             } else if (selected.id().equals("targetEsp")) {
@@ -628,7 +628,7 @@ public final class VisualConfigScreen extends Screen {
             g.drawString(this.font, "Категория зарезервирована для будущих модулей.", sx + 16, t + 99, MUTED, false);
         }
 
-        g.drawString(this.font, "KOTCODE  •  1.0.5", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "KOTCODE  •  1.0.6", l + 18, t + h - 55, MUTED, false);
         g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ",
             l + 148, t + h - 28, MUTED, false);
 
@@ -643,7 +643,7 @@ public final class VisualConfigScreen extends Screen {
                 int bw = button.getWidth();
                 int bh = button.getHeight();
                 g.fill(bx, by, bx + bw, by + 1, (VisualConfig.accentColor() & 0xAAFFFFFF));
-                g.fill(bx, by + bh - 1, bx + bw, by + bh, 0xAAFF78A5);
+                g.fill(bx, by + bh - 1, bx + bw, by + bh, (VisualConfig.accentColor() & 0xAAFFFFFF));
             }
         }
     }
