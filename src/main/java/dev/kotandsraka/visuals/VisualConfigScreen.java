@@ -168,7 +168,7 @@ public final class VisualConfigScreen extends Screen {
             case "Мир" -> {
                 add(list, "worldParticles", "Частицы мира", "Окружающие частицы вокруг игрока", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
                 add(list, "pearlTrail", "След жемчуга", "След за вашими жемчужинами Края", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
-                add(list, "trajectory", "Траектория", "Баллическая траектория по направлению взгляда", c.trajectory, () -> c.trajectory = !c.trajectory);
+                add(list, "trajectory", "Траектория", "Баллистическая траектория по направлению взгляда", c.trajectory, () -> c.trajectory = !c.trajectory);
                 add(list, "arrowTrajectory", "Прогноз стрелы", "Показывать предполагаемый путь выпущенных стрел", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
                 add(list, "chinaHat", "Шляпа", "Кольцо над головой в режиме от третьего лица", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
                 add(list, "bodyGlow", "Свечение тела", "Декоративные частицы вращаются вокруг вас", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
