@@ -18,6 +18,10 @@ public final class VisualConfig {
     // also resets old "enabled by default" config files once.
     public Integer configVersion = CURRENT_CONFIG_VERSION;
 
+    // Last opened Shift menu location, restored whenever the menu is opened again.
+    public String lastMenuCategory = "Бой";
+    public String lastMenuFeature = "hitParticles";
+
     // Combat
     public boolean hitParticles = false;
     public boolean criticalParticles = false;
