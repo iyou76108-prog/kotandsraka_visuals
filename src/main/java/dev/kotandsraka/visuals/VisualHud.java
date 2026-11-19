@@ -2,6 +2,7 @@ package dev.kotandsraka.visuals;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.Direction;
@@ -46,6 +47,10 @@ public final class VisualHud {
         Minecraft mc = Minecraft.getInstance();
         critical = mc.player != null && mc.player.fallDistance > 0.0F && !mc.player.onGround();
         if (cfg.targetRing) VisualEffects.targetRing(living);
+        if (cfg.hitSound && mc.player != null) {
+            float pitch = critical ? 1.05f : 0.92f;
+            mc.player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, 0.55f, pitch);
+        }
     }
 
     public static LivingEntity getTarget() {
