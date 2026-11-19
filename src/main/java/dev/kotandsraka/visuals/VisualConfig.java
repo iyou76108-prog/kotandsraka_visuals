@@ -12,7 +12,7 @@ import java.nio.file.Path;
 public final class VisualConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("kotandsraka_visuals.json");
-    private static final int CURRENT_CONFIG_VERSION = 3;
+    private static final int CURRENT_CONFIG_VERSION = 4;
 
     // All visual/gameplay toggles start disabled. The first launch after this update
     // also resets old "enabled by default" config files once.
@@ -30,6 +30,7 @@ public final class VisualConfig {
     public boolean hitRange = false;
     public boolean customCrosshair = false;
     public boolean comboHud = false;
+    public boolean hitSound = false;
 
     // Held-item rendering
     public boolean viewModel = false;
@@ -48,6 +49,7 @@ public final class VisualConfig {
     public boolean worldParticles = false;
     public boolean pearlTrail = false;
     public boolean trajectory = false;
+    public boolean arrowTrajectory = false;
     public boolean trailRainbow = false;
 
     // HUD
