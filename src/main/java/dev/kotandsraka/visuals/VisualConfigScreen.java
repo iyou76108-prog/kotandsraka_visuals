@@ -128,6 +128,7 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "World Particles", "Ambient particles around you", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
                 add(list, "Pearl Tracer", "Trail behind your ender pearls", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
                 add(list, "Trajectory", "Projectile path prediction guide", c.trajectory, () -> c.trajectory = !c.trajectory);
+                add(list, "Arrow Prediction", "Prediction line for your fired arrows", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
                 add(list, "Jump Rings", "Particle ring when you jump", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
                 add(list, "Skull Jump", "Pixel skull appears near crosshair on jump", c.skullJump, () -> c.skullJump = !c.skullJump);
                 add(list, "Movement Blur", "Built-in screen blur while moving", c.motionBlur, () -> c.motionBlur = !c.motionBlur);
