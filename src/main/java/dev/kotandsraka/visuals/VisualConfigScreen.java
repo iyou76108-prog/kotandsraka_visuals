@@ -185,6 +185,8 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "targetEsp", "Обводка цели", "Кольцо вокруг последней атакованной цели", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
                 add(list, "hitRange", "Дальность удара", "Показывать круг радиусом 3 блока", c.hitRange, () -> c.hitRange = !c.hitRange);
                 add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
+                add(list, "playerGlow", "Свечение игроков", "Цветные рамки игроков видны сквозь блоки", c.playerGlow, () -> c.playerGlow = !c.playerGlow);
+                add(list, "chestGlow", "Свечение сундуков", "Подсветка сундуков и эндер-сундуков сквозь стены", c.chestGlow, () -> c.chestGlow = !c.chestGlow);
             }
             case "Игрок" -> {
                 add(list, "viewModel", "Положение рук", "Изменять положение и поворот рук от первого лица", c.viewModel, () -> c.viewModel = !c.viewModel);
@@ -200,7 +202,7 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "coordsHud", "Координаты", "Координаты игрока XYZ", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
                 add(list, "speedHud", "Скорость", "Скорость передвижения в блоках в секунду", c.speedHud, () -> c.speedHud = !c.speedHud);
                 add(list, "totemHud", "Счётчик тотемов", "Тотемы в инвентаре и второй руке", c.totemHud, () -> c.totemHud = !c.totemHud);
-                add(list, "potionHud", "Эффекты зелий", "Количество активных эффектов зелий", c.potionHud, () -> c.potionHud = !c.potionHud);
+                add(list, "potionHud", "Список эффектов", "Названия, уровни и оставшееся время активных эффектов", c.potionHud, () -> c.potionHud = !c.potionHud);
                 add(list, "clockHud", "Часы", "Время игрового мира Minecraft", c.clockHud, () -> c.clockHud = !c.clockHud);
                 add(list, "compassHud", "Компас", "Направление взгляда игрока", c.compassHud, () -> c.compassHud = !c.compassHud);
                 add(list, "activeModulesHud", "Активные модули", "Список включённых модулей", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
