@@ -42,19 +42,21 @@ public final class VisualConfigScreen extends Screen {
         int left = panelLeft();
         int top = panelTop();
 
-        String[] tabs = {"COMBAT", "RENDER", "HUD", "MOVEMENT", "THEME"};
-        int tabWidth = 104;
+        String[] tabs = {"COMBAT", "RENDER", "HUD", "MOVE", "HANDS", "THEME"};
+        int tabWidth = 92;
         for (int i = 0; i < tabs.length; i++) {
             final int id = i;
             addRenderableWidget(Button.builder(Component.literal((tab == i ? "◆ " : "") + tabs[i]), b -> {
                 tab = id;
                 page = 0;
                 rebuild();
-            }).bounds(left + 16 + i * 110, top + 54, tabWidth, 25).build());
+            }).bounds(left + 12 + i * 96, top + 54, tabWidth, 25).build());
         }
 
-        if (tab == 4) {
+        if (tab == 5) {
             buildThemeTab(cfg, left, top);
+        } else if (tab == 4) {
+            buildHandsTab(cfg, left, top);
         } else {
             List<Feature> features = featuresForTab(cfg);
             int pageCount = Math.max(1, (features.size() + VISIBLE_ROWS * 2 - 1) / (VISIBLE_ROWS * 2));
@@ -168,6 +170,73 @@ public final class VisualConfigScreen extends Screen {
         }).bounds(x, y, 260, 30).build());
     }
 
+    private void buildHandsTab(VisualConfig cfg, int left, int top) {
+        int x1 = left + 20;
+        int x2 = left + 208;
+        int x3 = left + 396;
+        int y0 = top + 94;
+        int y1 = top + 134;
+        int y2 = top + 174;
+        int y3 = top + 214;
+        int y4 = top + 254;
+        int y5 = top + 294;
+
+        addFeature(new Feature("ViewModel", "First-person hand position and rotation", cfg.viewModel,
+            () -> cfg.viewModel = !cfg.viewModel), x1, y0);
+        addFeature(new Feature("Custom Swing", "Custom swing timing and angles", cfg.customSwing,
+            () -> cfg.customSwing = !cfg.customSwing), x2, y0);
+        addFeature(new Feature("Custom Fire", "Lower first-person fire overlay", cfg.customFire,
+            () -> cfg.customFire = !cfg.customFire), x3, y0);
+
+        addHandCycle("VM X: " + fmt(cfg.viewModelX), x1, y1,
+            () -> cfg.viewModelX = stepFloat(cfg.viewModelX, -0.5f, 0.5f, 0.05f));
+        addHandCycle("VM Y: " + fmt(cfg.viewModelY), x2, y1,
+            () -> cfg.viewModelY = stepFloat(cfg.viewModelY, -0.5f, 0.5f, 0.05f));
+        addHandCycle("VM Z: " + fmt(cfg.viewModelZ), x3, y1,
+            () -> cfg.viewModelZ = stepFloat(cfg.viewModelZ, -0.5f, 0.5f, 0.05f));
+
+        addHandCycle("VM SCALE: " + fmt(cfg.viewModelScale), x1, y2,
+            () -> cfg.viewModelScale = stepFloat(cfg.viewModelScale, 0.5f, 1.5f, 0.05f));
+        addHandCycle("VM ROT X: " + fmt(cfg.viewModelRotX), x2, y2,
+            () -> cfg.viewModelRotX = stepFloat(cfg.viewModelRotX, -180f, 180f, 10f));
+        addHandCycle("VM ROT Y: " + fmt(cfg.viewModelRotY), x3, y2,
+            () -> cfg.viewModelRotY = stepFloat(cfg.viewModelRotY, -180f, 180f, 10f));
+
+        addHandCycle("VM ROT Z: " + fmt(cfg.viewModelRotZ), x1, y3,
+            () -> cfg.viewModelRotZ = stepFloat(cfg.viewModelRotZ, -180f, 180f, 10f));
+        addHandCycle("SWING SPEED: " + fmt(cfg.swingSpeed), x2, y3,
+            () -> cfg.swingSpeed = stepFloat(cfg.swingSpeed, 0.5f, 2.5f, 0.25f));
+        addHandCycle("SWING STRENGTH: " + fmt(cfg.swingStrength), x3, y3,
+            () -> cfg.swingStrength = stepFloat(cfg.swingStrength, 0.25f, 1.5f, 0.1f));
+
+        addHandCycle("SWING ROT X: " + fmt(cfg.swingRotationX), x1, y4,
+            () -> cfg.swingRotationX = stepFloat(cfg.swingRotationX, -90f, 90f, 5f));
+        addHandCycle("SWING ROT Y: " + fmt(cfg.swingRotationY), x2, y4,
+            () -> cfg.swingRotationY = stepFloat(cfg.swingRotationY, -90f, 90f, 5f));
+        addHandCycle("SWING ROT Z: " + fmt(cfg.swingRotationZ), x3, y4,
+            () -> cfg.swingRotationZ = stepFloat(cfg.swingRotationZ, -90f, 90f, 5f));
+
+        addHandCycle("FIRE HEIGHT: " + Math.round(cfg.fireHeight * 100) + "%", x1, y5,
+            () -> cfg.fireHeight = cfg.fireHeight >= 1.0f ? 0.2f : Math.min(1.0f, cfg.fireHeight + 0.1f));
+    }
+
+    private void addHandCycle(String label, int x, int y, Runnable action) {
+        addRenderableWidget(Button.builder(Component.literal(label), b -> {
+            action.run();
+            VisualConfig.save();
+            rebuild();
+        }).bounds(x, y, 174, 30).build());
+    }
+
+    private static String fmt(float value) {
+        return String.format("%.2f", value);
+    }
+
+    private static float stepFloat(float value, float min, float max, float step) {
+        float next = value + step;
+        return next > max + 0.0001f ? min : Math.round(next * 100.0f) / 100.0f;
+    }
+
     private void buildThemeTab(VisualConfig cfg, int left, int top) {
         String[] names = {"CYAN", "VIOLET", "RED", "MINT", "GOLD", "PINK"};
         addRenderableWidget(Button.builder(Component.literal("COLOR PALETTE: " + names[Math.floorMod(cfg.colorPreset, names.length)]), b -> {
@@ -224,10 +293,13 @@ public final class VisualConfigScreen extends Screen {
             left + 20, top + 31, VisualConfig.mutedColor(), false);
         g.drawString(this.font, tabTitle(), left + 22, top + 82, accent, false);
 
-        if (tab == 4) {
+        if (tab == 5) {
             g.drawString(this.font, "Palette changes the panel, active modules and HUD accent.", left + 24, top + 260,
                 VisualConfig.mutedColor(), false);
             g.fill(left + 24, top + 281, left + 540, top + 286, accent);
+        } else if (tab == 4) {
+            g.drawString(this.font, "ViewModel and swing changes are local to first-person hands.", left + 22, top + 320,
+                VisualConfig.mutedColor(), false);
         } else {
             g.drawString(this.font, "Select a feature to enable it. All features start OFF.", left + 22, top + 316,
                 VisualConfig.mutedColor(), false);
@@ -254,6 +326,7 @@ public final class VisualConfigScreen extends Screen {
             case 1 -> "WORLD / RENDER MODULES";
             case 2 -> "HUD MODULES";
             case 3 -> "MOVEMENT";
+            case 4 -> "VIEWMODEL / SWING / FIRE";
             default -> "THEME / COLOR PALETTE";
         };
     }
