@@ -101,14 +101,14 @@ public final class VisualHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         long now = System.currentTimeMillis();
-        boolean editingChat = cfg.hudEditMode && mc.screen instanceof ChatScreen;
+        boolean editingChat = mc.screen instanceof ChatScreen;
 
         if (cfg.hitFlash && now < hitUntil) {
             int alpha = (int) Math.min(70, Math.max(0, (hitUntil - now) * 70 / Math.max(1, cfg.particleLifetimeMs)));
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xFFFFFF);
         }
         if (cfg.hitText && now < hitUntil) {
-            String text = critical ? "CRITICAL" : "HIT";
+            String text = critical ? "КРИТ" : "ПОПАДАНИЕ";
             graphics.drawCenteredString(mc.font, text, graphics.guiWidth() / 2,
                 graphics.guiHeight() / 2 - 34, VisualConfig.accentColor());
         }
@@ -127,7 +127,7 @@ public final class VisualHud {
         if (cfg.armorHud) renderArmorHud(graphics, mc);
         if (cfg.keystrokes) renderKeystrokes(graphics, mc);
         if (cfg.comboHud && cfg.combo > 0) {
-            graphics.drawCenteredString(mc.font, "COMBO  " + cfg.combo,
+            graphics.drawCenteredString(mc.font, "КОМБО  " + cfg.combo,
                 graphics.guiWidth() / 2, graphics.guiHeight() / 2 + 38, VisualConfig.accentColor());
         }
 
@@ -135,18 +135,18 @@ public final class VisualHud {
         renderActiveModules(graphics, mc, cfg);
 
         if (editingChat) {
-            if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, "TARGET");
-            if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "ARMOR");
+            if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, "ЦЕЛЬ");
+            if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "БРОНЯ");
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
-                HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "KEYS");
+                HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "КЛАВИШИ");
             int statRows = infoHudLineCount(cfg);
-            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5, 225, statRows * 12 + 12, "INFO");
+            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5, 225, statRows * 12 + 12, "ИНФО");
             int moduleCount = activeModuleCount(cfg);
             if (cfg.activeModulesHud && moduleCount > 0) {
                 HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
-                    112, moduleCount * 11 + 22, "MODULES");
+                    112, moduleCount * 11 + 22, "МОДУЛИ");
             }
-            graphics.drawCenteredString(mc.font, "HUD EDIT  •  HOLD RIGHT MOUSE TO MOVE  •  DISABLE EDIT MODE TO FINISH",
+            graphics.drawCenteredString(mc.font, "ПЕРЕМЕЩЕНИЕ HUD  •  ЗАЖМИ ЛКМ НА ПАНЕЛИ И ПЕРЕТАЩИ ЕЁ",
                 graphics.guiWidth() / 2, 5, VisualConfig.accentColor());
         }
     }
@@ -199,23 +199,23 @@ public final class VisualHud {
 
     private static void renderInfoHud(GuiGraphics g, Minecraft mc, VisualConfig cfg) {
         List<String> lines = new ArrayList<>();
-        if (cfg.fpsHud) lines.add("FPS  " + mc.getFps());
-        if (cfg.cpsHud) lines.add("CPS  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size());
+        if (cfg.fpsHud) lines.add("КАДРЫ  " + mc.getFps());
+        if (cfg.cpsHud) lines.add("КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size());
         if (cfg.pingHud) {
             int ping = 0;
             if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
                 ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
             }
-            lines.add("PING  " + ping + " ms");
+            lines.add("ПИНГ  " + ping + " мс");
         }
         if (cfg.coordsHud) lines.add(String.format("XYZ  %d  %d  %d", mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()));
-        if (cfg.speedHud) lines.add(String.format("SPEED  %.2f b/s", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
-        if (cfg.totemHud) lines.add("TOTEMS  " + countTotems(mc));
-        if (cfg.potionHud) lines.add("EFFECTS  " + mc.player.getActiveEffects().size());
-        if (cfg.clockHud) lines.add("TIME  " + worldClock(mc));
+        if (cfg.speedHud) lines.add(String.format("СКОРОСТЬ  %.2f бл/с", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
+        if (cfg.totemHud) lines.add("ТОТЕМЫ  " + countTotems(mc));
+        if (cfg.potionHud) lines.add("ЭФФЕКТЫ  " + mc.player.getActiveEffects().size());
+        if (cfg.clockHud) lines.add("ВРЕМЯ  " + worldClock(mc));
         if (cfg.compassHud) {
             Direction direction = mc.player.getDirection();
-            lines.add("FACING  " + direction.getName().toUpperCase());
+            lines.add("НАПРАВЛЕНИЕ  " + direction.getName().toUpperCase());
         }
         if (lines.isEmpty()) return;
 
@@ -270,7 +270,7 @@ public final class VisualHud {
         int panelWidth = width + 14;
         g.fill(x, y, x + panelWidth, y + modules.size() * 12 + 20, VisualConfig.panelColor());
         g.fill(x, y, x + panelWidth, y + 2, VisualConfig.accentColor());
-        g.drawString(mc.font, "KOTAND SRAKA", x + 6, y + 6, VisualConfig.accentColor(), false);
+        g.drawString(mc.font, "KOTCODE", x + 6, y + 6, VisualConfig.accentColor(), false);
         for (int i = 0; i < modules.size(); i++) {
             g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, 0xFFEAF5FF, false);
         }
@@ -296,24 +296,24 @@ public final class VisualHud {
 
     private static List<String> activeModules(VisualConfig c) {
         List<String> list = new ArrayList<>();
-        if (c.hitParticles) list.add("Hit Particles");
-        if (c.damageNumbers) list.add("Damage Numbers");
-        if (c.killEffect) list.add("Kill Effect");
-        if (c.targetEsp) list.add("Target ESP");
-        if (c.hitRange) list.add("Hit Range");
-        if (c.customCrosshair) list.add("Custom Crosshair");
-        if (c.playerTrail) list.add("Player Trail");
-        if (c.pearlTrail) list.add("Pearl Tracer");
-        if (c.trajectory) list.add("Trajectory");
-        if (c.chinaHat) list.add("China Hat");
-        if (c.bodyGlow) list.add("Body Glow");
-        if (c.worldParticles) list.add("World Particles");
-        if (c.autoSprint) list.add("Auto Sprint");
-        if (c.skullJump) list.add("Skull Jump");
-        if (c.comboHud) list.add("Combo Counter");
-        if (c.viewModel) list.add("ViewModel");
-        if (c.customSwing) list.add("Custom Swing");
-        if (c.customFire) list.add("Custom Fire");
+        if (c.hitParticles) list.add("Частицы при ударе");
+        if (c.damageNumbers) list.add("Числа урона");
+        if (c.killEffect) list.add("Эффект убийства");
+        if (c.targetEsp) list.add("Обводка цели");
+        if (c.hitRange) list.add("Дальность удара");
+        if (c.customCrosshair) list.add("Настраиваемый прицел");
+        if (c.playerTrail) list.add("След игрока");
+        if (c.pearlTrail) list.add("След жемчуга");
+        if (c.trajectory) list.add("Траектория");
+        if (c.chinaHat) list.add("Шляпа");
+        if (c.bodyGlow) list.add("Свечение тела");
+        if (c.worldParticles) list.add("Частицы мира");
+        if (c.autoSprint) list.add("Авто-бег");
+        if (c.skullJump) list.add("Череп при прыжке");
+        if (c.comboHud) list.add("Счётчик комбо");
+        if (c.viewModel) list.add("Положение рук");
+        if (c.customSwing) list.add("Настройка удара");
+        if (c.customFire) list.add("Огонь от первого лица");
         return list;
     }
 
@@ -344,14 +344,14 @@ public final class VisualHud {
         int w = 150;
         g.fill(x, y, x + w, y + 42, VisualConfig.panelColor());
         g.fill(x, y, x + w, y + 2, VisualConfig.accentColor());
-        String name = target == null ? "Target HUD preview" : target.getName().getString();
+        String name = target == null ? "Предпросмотр HUD цели" : target.getName().getString();
         g.drawString(mc.font, name, x + 7, y + 6, 0xFFFFFF, true);
         float health = target == null ? 0.75f : Math.max(0.0F, target.getHealth());
         float max = target == null ? 1.0f : Math.max(1.0F, target.getMaxHealth());
         int bar = (int) ((w - 14) * Math.min(1.0F, health / max));
         g.fill(x + 7, y + 20, x + w - 7, y + 27, 0xFF333333);
         g.fill(x + 7, y + 20, x + 7 + bar, y + 27, VisualConfig.accentColor());
-        g.drawString(mc.font, target == null ? "Drag to move" : String.format("%.1f / %.1f", health, max),
+        g.drawString(mc.font, target == null ? "Перетащите мышью" : String.format("%.1f / %.1f", health, max),
             x + 7, y + 30, 0xFFE0E0E0, true);
     }
 
@@ -363,8 +363,8 @@ public final class VisualHud {
         drawKey(g, mc, "A", x, y + 24, mc.options.keyLeft.isDown());
         drawKey(g, mc, "S", x + 26, y + 24, mc.options.keyDown.isDown());
         drawKey(g, mc, "D", x + 52, y + 24, mc.options.keyRight.isDown());
-        drawKey(g, mc, "LMB", x, y + 48, mc.options.keyAttack.isDown());
-        drawKey(g, mc, "RMB", x + 52, y + 48, mc.options.keyUse.isDown());
+        drawKey(g, mc, "ЛКМ", x, y + 48, mc.options.keyAttack.isDown());
+        drawKey(g, mc, "ПКМ", x + 52, y + 48, mc.options.keyUse.isDown());
     }
 
     private static void drawKey(GuiGraphics g, Minecraft mc, String label, int x, int y, boolean down) {
