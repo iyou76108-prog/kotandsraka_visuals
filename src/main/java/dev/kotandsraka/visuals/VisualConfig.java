@@ -12,7 +12,7 @@ import java.nio.file.Path;
 public final class VisualConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("kotandsraka_visuals.json");
-    private static final int CURRENT_CONFIG_VERSION = 2;
+    private static final int CURRENT_CONFIG_VERSION = 3;
 
     // All visual/gameplay toggles start disabled. The first launch after this update
     // also resets old "enabled by default" config files once.
@@ -30,6 +30,14 @@ public final class VisualConfig {
     public boolean hitRange = false;
     public boolean customCrosshair = false;
     public boolean comboHud = false;
+
+    // Held-item rendering
+    public boolean viewModel = false;
+    public boolean customSwing = false;
+    public boolean customFire = false;
+    // Motion blur needs temporal framebuffer history; deliberately left disabled until
+    // the custom post-processing pass is added and verified.
+    public boolean motionBlur = false;
 
     // World / render
     public boolean playerTrail = false;
@@ -97,6 +105,12 @@ public final class VisualConfig {
     public float viewModelRotX = 0.0f;
     public float viewModelRotY = 0.0f;
     public float viewModelRotZ = 0.0f;
+    public float swingSpeed = 1.0f;
+    public float swingStrength = 1.0f;
+    public float swingRotationX = 0.0f;
+    public float swingRotationY = 0.0f;
+    public float swingRotationZ = 0.0f;
+    public float fireHeight = 0.35f;
     public float trailWidth = 2.5f;
     public int trailLength = 24;
     public int trailAlpha = 190;
