@@ -74,7 +74,33 @@ public final class VisualConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        VisualConfig cfg = VisualConfig.get();
+        category = isKnownCategory(cfg.lastMenuCategory) ? cfg.lastMenuCategory : "Бой";
+        selectedId = cfg.lastMenuFeature == null ? "" : cfg.lastMenuFeature;
+
+        List<Feature> features = featuresForCategory(cfg);
+        if (features.isEmpty()) {
+            selectedId = "";
+        } else if (features.stream().noneMatch(feature -> feature.id().equals(selectedId))) {
+            selectedId = features.get(0).id();
+        }
+        rememberSelection();
         rebuild();
+    }
+
+    private static boolean isKnownCategory(String candidate) {
+        if (candidate == null) return false;
+        for (String item : CATEGORIES) {
+            if (item.equals(candidate)) return true;
+        }
+        return false;
+    }
+
+    private void rememberSelection() {
+        VisualConfig cfg = VisualConfig.get();
+        cfg.lastMenuCategory = category;
+        cfg.lastMenuFeature = selectedId;
+        VisualConfig.save();
     }
 
     private void rebuild() {
@@ -91,6 +117,7 @@ public final class VisualConfigScreen extends Screen {
                 category = name;
                 List<Feature> next = featuresForCategory(VisualConfig.get());
                 selectedId = next.isEmpty() ? "" : next.get(0).id();
+                rememberSelection();
                 rebuild();
             }).bounds(l + 10, y, 118, 24).build());
         }
@@ -113,6 +140,7 @@ public final class VisualConfigScreen extends Screen {
 
             addRenderableWidget(Button.builder(Component.literal(feature.name()).withStyle(style -> style.withItalic(true)), b -> {
                 selectedId = id;
+                rememberSelection();
                 rebuild();
             }).bounds(modulesX() + 6, y, modulesWidth() - 57, rowHeight).build());
 
@@ -125,6 +153,7 @@ public final class VisualConfigScreen extends Screen {
             } else {
                 addRenderableWidget(Button.builder(Component.literal("..."), b -> {
                     selectedId = id;
+                    rememberSelection();
                     rebuild();
                 }).bounds(modulesX() + modulesWidth() - 46, y, 39, rowHeight).build());
             }
@@ -133,8 +162,16 @@ public final class VisualConfigScreen extends Screen {
         buildSettings(cfg, findSelected(features), l, t, h);
 
         addRenderableWidget(Button.builder(Component.literal("СБРОСИТЬ ВСЁ"), b -> {
+            String keepCategory = category;
+            String keepFeature = selectedId;
             VisualConfig.reset();
-            selectedId = category.equals("Конфиги") ? "theme" : selectedId;
+            category = keepCategory;
+            selectedId = keepFeature;
+            List<Feature> resetFeatures = featuresForCategory(VisualConfig.get());
+            if (resetFeatures.stream().noneMatch(feature -> feature.id().equals(selectedId))) {
+                selectedId = resetFeatures.isEmpty() ? "" : resetFeatures.get(0).id();
+            }
+            rememberSelection();
             rebuild();
         }).bounds(l + 12, t + h - 34, 112, 24).build());
 
