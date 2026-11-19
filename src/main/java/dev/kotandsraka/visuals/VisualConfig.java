@@ -66,6 +66,8 @@ public final class VisualConfig {
     public boolean clockHud = false;
     public boolean compassHud = false;
     public boolean activeModulesHud = false;
+    public boolean playerGlow = false;
+    public boolean chestGlow = false;
 
     // Movement
     public boolean autoSprint = false;
@@ -107,6 +109,8 @@ public final class VisualConfig {
     public int hudY = 110;
     public int modulesHudX = -1;
     public int modulesHudY = 8;
+    public int effectsHudX = 8;
+    public int effectsHudY = 185;
     public int combo = 0;
 
     public float viewModelX = 0.0f;
@@ -209,6 +213,8 @@ public final class VisualConfig {
         cfg.keystrokesHudY = -1;
         cfg.modulesHudX = -1;
         cfg.modulesHudY = 8;
+        cfg.effectsHudX = 8;
+        cfg.effectsHudY = 185;
         cfg.hudX = 8;
         cfg.hudY = 110;
         save();
