@@ -136,7 +136,6 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "Arrow Prediction", "Prediction line for your fired arrows", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
                 add(list, "Jump Rings", "Particle ring when you jump", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
                 add(list, "Skull Jump", "Pixel skull appears near crosshair on jump", c.skullJump, () -> c.skullJump = !c.skullJump);
-                add(list, "Movement Blur", "Built-in screen blur while moving", c.motionBlur, () -> c.motionBlur = !c.motionBlur);
             }
             case 2 -> {
                 add(list, "Target HUD", "Target name and health bar", c.targetHud, () -> c.targetHud = !c.targetHud);
