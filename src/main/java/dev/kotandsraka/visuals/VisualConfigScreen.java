@@ -18,20 +18,20 @@ public final class VisualConfigScreen extends Screen {
     private static final int MUTED = 0xFF9A9DA8;
 
     private final Screen parent;
-    private String category = "Combat";
+    private String category = "Бой";
     private String selectedId = "hitParticles";
     private int moduleRowHeight = 27;
 
     private record Feature(String id, String name, String description, boolean enabled, Runnable toggle) {}
 
     public VisualConfigScreen(Screen parent) {
-        super(Component.literal("KotAndSraka Visuals"));
+        super(Component.literal("KotCode"));
         this.parent = parent;
     }
 
     private static final String[] CATEGORIES = {
-        "Combat", "Movement", "World", "Render", "Player",
-        "Exploit", "Other", "Friends", "Configs"
+        "Бой", "Движение", "Мир", "Рендер", "Игрок",
+        "Эксплойты", "Другое", "Друзья", "Конфиги"
     };
 
     private int panelWidth() {
@@ -105,13 +105,13 @@ public final class VisualConfigScreen extends Screen {
             int rowHeight = Math.max(18, moduleRowHeight - 3);
             final String id = feature.id();
 
-            addRenderableWidget(Button.builder(Component.literal(feature.name()), b -> {
+            addRenderableWidget(Button.builder(Component.literal(feature.name()).withStyle(style -> style.withItalic(true)), b -> {
                 selectedId = id;
                 rebuild();
             }).bounds(modulesX() + 6, y, modulesWidth() - 57, rowHeight).build());
 
             if (feature.toggle() != null) {
-                addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ON" : "OFF"), b -> {
+                addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ВКЛ" : "ВЫКЛ"), b -> {
                     feature.toggle().run();
                     VisualConfig.save();
                     rebuild();
@@ -126,13 +126,13 @@ public final class VisualConfigScreen extends Screen {
 
         buildSettings(cfg, findSelected(features), l, t, h);
 
-        addRenderableWidget(Button.builder(Component.literal("RESET ALL"), b -> {
+        addRenderableWidget(Button.builder(Component.literal("СБРОСИТЬ ВСЁ"), b -> {
             VisualConfig.reset();
             selectedId = category.equals("Configs") ? "theme" : selectedId;
             rebuild();
         }).bounds(l + 12, t + h - 34, 112, 24).build());
 
-        addRenderableWidget(Button.builder(Component.literal("DONE"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.literal("ГОТОВО"), b -> onClose())
             .bounds(l + panelWidth() - 124, t + h - 34, 110, 24).build());
     }
 
@@ -146,67 +146,66 @@ public final class VisualConfigScreen extends Screen {
     private List<Feature> featuresForCategory(VisualConfig c) {
         List<Feature> list = new ArrayList<>();
         switch (category) {
-            case "Combat" -> {
-                add(list, "hitParticles", "Hit Particles", "Particle burst when your attack connects", c.hitParticles, () -> c.hitParticles = !c.hitParticles);
-                add(list, "criticalParticles", "Critical Particles", "Extra particles on critical hits", c.criticalParticles, () -> c.criticalParticles = !c.criticalParticles);
-                add(list, "hitSound", "Hit Sound", "Play a sound when you hit an entity", c.hitSound, () -> c.hitSound = !c.hitSound);
-                add(list, "hitFlash", "Hit Flash", "Brief screen flash after a hit", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
-                add(list, "hitText", "Hit Marker", "Show HIT / CRITICAL text", c.hitText, () -> c.hitText = !c.hitText);
-                add(list, "damageNumbers", "Damage Numbers", "Show damage dealt to the target", c.damageNumbers, () -> c.damageNumbers = !c.damageNumbers);
-                add(list, "killEffect", "Kill Effect", "Particle burst when the target dies", c.killEffect, () -> c.killEffect = !c.killEffect);
-                add(list, "targetRing", "Target Ring", "Ring effect on the attacked target", c.targetRing, () -> c.targetRing = !c.targetRing);
-                add(list, "targetEsp", "Target ESP", "Ring outline around the last attacked target", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
-                add(list, "hitRange", "Hit Range", "Show a 3-block range circle", c.hitRange, () -> c.hitRange = !c.hitRange);
-                add(list, "comboHud", "Combo Counter", "Count consecutive hits", c.comboHud, () -> c.comboHud = !c.comboHud);
+            case "Бой" -> {
+                add(list, "hitParticles", "Частицы при ударе", "Вспышка частиц при попадании по цели", c.hitParticles, () -> c.hitParticles = !c.hitParticles);
+                add(list, "criticalParticles", "Частицы крит. удара", "Дополнительные частицы при критическом ударе", c.criticalParticles, () -> c.criticalParticles = !c.criticalParticles);
+                add(list, "hitSound", "Звук попадания", "Воспроизводить звук при попадании по существу", c.hitSound, () -> c.hitSound = !c.hitSound);
+                add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
+                add(list, "hitText", "Метка попадания", "Показывать надпись ПОПАДАНИЕ / КРИТ", c.hitText, () -> c.hitText = !c.hitText);
+                add(list, "damageNumbers", "Числа урона", "Показывать нанесённый цели урон", c.damageNumbers, () -> c.damageNumbers = !c.damageNumbers);
+                add(list, "killEffect", "Эффект убийства", "Всплеск частиц при смерти цели", c.killEffect, () -> c.killEffect = !c.killEffect);
+                add(list, "targetRing", "Кольцо цели", "Кольцевой эффект на атакованной цели", c.targetRing, () -> c.targetRing = !c.targetRing);
+                add(list, "targetEsp", "Обводка цели", "Кольцо вокруг последней атакованной цели", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
+                add(list, "hitRange", "Дальность удара", "Показывать круг радиусом 3 блока", c.hitRange, () -> c.hitRange = !c.hitRange);
+                add(list, "comboHud", "Счётчик комбо", "Считать последовательные попадания", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
-            case "Movement" -> {
-                add(list, "autoSprint", "Auto Sprint", "Automatically sprint while moving forward", c.autoSprint, () -> c.autoSprint = !c.autoSprint);
-                add(list, "playerTrail", "Player Trail", "Leave a trail behind your player", c.playerTrail, () -> c.playerTrail = !c.playerTrail);
-                add(list, "jumpRings", "Jump Rings", "Particle ring when jumping", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
-                add(list, "skullJump", "Skull Jump", "Show a small skull near the crosshair on jump", c.skullJump, () -> c.skullJump = !c.skullJump);
+            case "Движение" -> {
+                add(list, "autoSprint", "Авто-бег", "Автоматически включать бег при движении вперёд", c.autoSprint, () -> c.autoSprint = !c.autoSprint);
+                add(list, "playerTrail", "След игрока", "Оставлять след за игроком", c.playerTrail, () -> c.playerTrail = !c.playerTrail);
+                add(list, "jumpRings", "Кольцо прыжка", "Кольцо из частиц при прыжке", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
+                add(list, "skullJump", "Череп при прыжке", "Показывать череп рядом с прицелом при прыжке", c.skullJump, () -> c.skullJump = !c.skullJump);
             }
-            case "World" -> {
-                add(list, "worldParticles", "World Particles", "Ambient particles around the player", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
-                add(list, "pearlTrail", "Pearl Tracer", "Trail behind your own ender pearls", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
-                add(list, "trajectory", "Trajectory", "Ballistic guide along your look direction", c.trajectory, () -> c.trajectory = !c.trajectory);
-                add(list, "arrowTrajectory", "Arrow Prediction", "Predict the path of your fired arrows", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
-                add(list, "chinaHat", "China Hat", "Ring above your head in third person", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
-                add(list, "bodyGlow", "Body Glow", "Orbiting cosmetic particles around you", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
-                add(list, "trailRainbow", "Rainbow Trail", "Cycle trail colors", c.trailRainbow, () -> c.trailRainbow = !c.trailRainbow);
+            case "Мир" -> {
+                add(list, "worldParticles", "Частицы мира", "Окружающие частицы вокруг игрока", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
+                add(list, "pearlTrail", "След жемчуга", "След за вашими жемчужинами Края", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
+                add(list, "trajectory", "Траектория", "Баллическая траектория по направлению взгляда", c.trajectory, () -> c.trajectory = !c.trajectory);
+                add(list, "arrowTrajectory", "Прогноз стрелы", "Показывать предполагаемый путь выпущенных стрел", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
+                add(list, "chinaHat", "Шляпа", "Кольцо над головой в режиме от третьего лица", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
+                add(list, "bodyGlow", "Свечение тела", "Декоративные частицы вращаются вокруг вас", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
+                add(list, "trailRainbow", "Радужный след", "Плавно менять цвета следа", c.trailRainbow, () -> c.trailRainbow = !c.trailRainbow);
             }
-            case "Render" -> {
-                add(list, "customCrosshair", "Custom Crosshair", "Accent-colored crosshair overlay", c.customCrosshair, () -> c.customCrosshair = !c.customCrosshair);
-                add(list, "targetEsp", "Target ESP", "Ring outline around your last target", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
-                add(list, "hitRange", "Hit Range", "Show the 3-block range circle", c.hitRange, () -> c.hitRange = !c.hitRange);
-                add(list, "hitFlash", "Hit Flash", "Brief screen flash after a hit", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
+            case "Рендер" -> {
+                add(list, "customCrosshair", "Настраиваемый прицел", "Прицел с выбранным цветовым акцентом", c.customCrosshair, () -> c.customCrosshair = !c.customCrosshair);
+                add(list, "targetEsp", "Обводка цели", "Ring outline around your last target", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
+                add(list, "hitRange", "Дальность удара", "Show the 3-block range circle", c.hitRange, () -> c.hitRange = !c.hitRange);
+                add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
             }
-            case "Player" -> {
-                add(list, "viewModel", "ViewModel", "Change first-person hand position and rotation", c.viewModel, () -> c.viewModel = !c.viewModel);
-                add(list, "customSwing", "Custom Swing", "Adjust swing speed, strength and angles", c.customSwing, () -> c.customSwing = !c.customSwing);
+            case "Игрок" -> {
+                add(list, "viewModel", "Положение рук", "Изменять положение и поворот рук от первого лица", c.viewModel, () -> c.viewModel = !c.viewModel);
+                add(list, "customSwing", "Настройка удара", "Настраивать скорость, силу и углы замаха", c.customSwing, () -> c.customSwing = !c.customSwing);
             }
-            case "Other" -> {
-                add(list, "targetHud", "Target HUD", "Target name and health bar", c.targetHud, () -> c.targetHud = !c.targetHud);
-                add(list, "armorHud", "Armor HUD", "Armor slots and durability", c.armorHud, () -> c.armorHud = !c.armorHud);
-                add(list, "keystrokes", "Keystrokes", "WASD and mouse key display", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
-                add(list, "fpsHud", "FPS", "Frames per second", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
-                add(list, "cpsHud", "CPS", "Clicks per second", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
-                add(list, "pingHud", "Ping", "Server latency", c.pingHud, () -> c.pingHud = !c.pingHud);
-                add(list, "coordsHud", "Coordinates", "XYZ position", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
-                add(list, "speedHud", "Speed", "Movement speed in blocks per second", c.speedHud, () -> c.speedHud = !c.speedHud);
-                add(list, "totemHud", "Totem Counter", "Totems in inventory and offhand", c.totemHud, () -> c.totemHud = !c.totemHud);
-                add(list, "potionHud", "Potion Effects", "Count of active potion effects", c.potionHud, () -> c.potionHud = !c.potionHud);
-                add(list, "clockHud", "Clock", "Minecraft world time", c.clockHud, () -> c.clockHud = !c.clockHud);
-                add(list, "compassHud", "Compass", "Facing direction", c.compassHud, () -> c.compassHud = !c.compassHud);
-                add(list, "activeModulesHud", "Active Modules", "List of enabled modules", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
-                add(list, "hudEditMode", "HUD Editor", "Move HUD panels while chat is open", c.hudEditMode, () -> c.hudEditMode = !c.hudEditMode);
-                add(list, "comboHud", "Combo Counter", "Show consecutive hit count", c.comboHud, () -> c.comboHud = !c.comboHud);
+            case "Другое" -> {
+                add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
+                add(list, "armorHud", "HUD брони", "Слоты брони и её прочность", c.armorHud, () -> c.armorHud = !c.armorHud);
+                add(list, "keystrokes", "Клавиши", "Отображение нажатий WASD и кнопок мыши", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
+                add(list, "fpsHud", "FPS", "Количество кадров в секунду", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
+                add(list, "cpsHud", "CPS", "Количество кликов в секунду", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
+                add(list, "pingHud", "Пинг", "Задержка соединения с сервером", c.pingHud, () -> c.pingHud = !c.pingHud);
+                add(list, "coordsHud", "Координаты", "Координаты игрока XYZ", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
+                add(list, "speedHud", "Скорость", "Скорость передвижения в блоках в секунду", c.speedHud, () -> c.speedHud = !c.speedHud);
+                add(list, "totemHud", "Счётчик тотемов", "Тотемы в инвентаре и второй руке", c.totemHud, () -> c.totemHud = !c.totemHud);
+                add(list, "potionHud", "Эффекты зелий", "Количество активных эффектов зелий", c.potionHud, () -> c.potionHud = !c.potionHud);
+                add(list, "clockHud", "Часы", "Время игрового мира Minecraft", c.clockHud, () -> c.clockHud = !c.clockHud);
+                add(list, "compassHud", "Компас", "Направление взгляда игрока", c.compassHud, () -> c.compassHud = !c.compassHud);
+                add(list, "activeModulesHud", "Активные модули", "Список включённых модулей", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
+                add(list, "comboHud", "Счётчик комбо", "Show consecutive hit count", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
-            case "Configs" -> {
-                list.add(new Feature("theme", "Theme", "Accent color and menu appearance", false, null));
-                list.add(new Feature("hudLayout", "HUD Layout", "Reset the positions of movable HUD panels", false, null));
-                list.add(new Feature("resetConfig", "Reset Config", "Restore all module settings to defaults", false, null));
+            case "Конфиги" -> {
+                list.add(new Feature("theme", "Оформление", "Цветовой акцент и внешний вид меню", false, null));
+                list.add(new Feature("hudLayout", "Положение HUD", "Сбросить положение перемещаемых панелей HUD", false, null));
+                list.add(new Feature("resetConfig", "Сброс настроек", "Вернуть настройки всех модулей по умолчанию", false, null));
             }
-            case "Exploit", "Friends" -> {
+            case "Эксплойты", "Друзья" -> {
                 // These categories are shown to mirror the reference layout; no unsupported modules are fabricated.
             }
             default -> {
@@ -228,7 +227,7 @@ public final class VisualConfigScreen extends Screen {
         int firstY = t + 132;
 
         if (feature.toggle() != null) {
-            addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ENABLED  ●" : "DISABLED  ○"), b -> {
+            addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ВКЛЮЧЕНО  ●" : "ВЫКЛЮЧЕНО  ○"), b -> {
                 feature.toggle().run();
                 VisualConfig.save();
                 rebuild();
@@ -237,51 +236,51 @@ public final class VisualConfigScreen extends Screen {
 
         switch (feature.id()) {
             case "hitParticles", "criticalParticles" -> {
-                addSetting("PARTICLE COUNT: " + c.particleCount, x, firstY, colWidth,
+                addSetting("КОЛИЧЕСТВО ЧАСТИЦ: " + c.particleCount, x, firstY, colWidth,
                     () -> c.particleCount = c.particleCount >= 24 ? 2 : c.particleCount + 2);
-                addSetting("SHAPE: " + particleShapeName(c.particleShape), x2, firstY,
+                addSetting("ФОРМА: " + particleShapeName(c.particleShape), x2, firstY,
                     colWidth, () -> c.particleShape = (c.particleShape + 1) % 3);
-                addSetting("SPREAD: " + fmt(c.particleSpread), x, firstY + 34, colWidth,
+                addSetting("РАЗБРОС: " + fmt(c.particleSpread), x, firstY + 34, colWidth,
                     () -> c.particleSpread = stepFloat(c.particleSpread, 0.10f, 1.25f, 0.05f));
-                addSetting("SPEED: " + fmt(c.particleSpeed), x2, firstY + 34, colWidth,
+                addSetting("СКОРОСТЬ: " + fmt(c.particleSpeed), x2, firstY + 34, colWidth,
                     () -> c.particleSpeed = stepFloat(c.particleSpeed, 0.02f, 0.50f, 0.02f));
-                addSetting("HEIGHT: " + fmt(c.particleHeight), x, firstY + 68, colWidth,
+                addSetting("ВЫСОТА: " + fmt(c.particleHeight), x, firstY + 68, colWidth,
                     () -> c.particleHeight = stepFloat(c.particleHeight, 0.05f, 1.50f, 0.05f));
-                addSetting("LIFETIME: " + c.particleLifetimeMs + " ms", x2, firstY + 68, colWidth,
+                addSetting("ВРЕМЯ ЖИЗНИ: " + c.particleLifetimeMs + " мс", x2, firstY + 68, colWidth,
                     () -> c.particleLifetimeMs = c.particleLifetimeMs >= 1200 ? 200 : c.particleLifetimeMs + 100);
-                addSettingToggle("CRITICAL PARTICLES: " + onOff(c.criticalParticles),
+                addSettingToggle("КРИТ. ЧАСТИЦЫ: " + onOff(c.criticalParticles),
                     x, firstY + 102, colWidth, () -> c.criticalParticles = !c.criticalParticles);
             }
             case "playerTrail", "pearlTrail", "trailRainbow" -> {
-                addSetting("TRAIL WIDTH: " + fmt(c.trailWidth), x, firstY, colWidth,
+                addSetting("ШИРИНА СЛЕДА: " + fmt(c.trailWidth), x, firstY, colWidth,
                     () -> c.trailWidth = stepFloat(c.trailWidth, 1.0f, 5.0f, 0.5f));
-                addSetting("TRAIL LENGTH: " + c.trailLength, x2, firstY, colWidth,
+                addSetting("ДЛИНА СЛЕДА: " + c.trailLength, x2, firstY, colWidth,
                     () -> c.trailLength = c.trailLength >= 80 ? 8 : c.trailLength + 4);
-                addSetting("TRAIL DENSITY: " + c.trailIntensity, x, firstY + 34, colWidth,
+                addSetting("ПЛОТНОСТЬ СЛЕДА: " + c.trailIntensity, x, firstY + 34, colWidth,
                     () -> c.trailIntensity = c.trailIntensity >= 8 ? 1 : c.trailIntensity + 1);
-                addSettingToggle("RAINBOW: " + onOff(c.trailRainbow), x2, firstY + 34,
+                addSettingToggle("РАДУЖНЫЙ ЦВЕТ: " + onOff(c.trailRainbow), x2, firstY + 34,
                     colWidth, () -> c.trailRainbow = !c.trailRainbow);
             }
             case "viewModel" -> {
-                addSetting("POSITION X: " + fmt(c.viewModelX), x, firstY, colWidth,
+                addSetting("ПОЗИЦИЯ X: " + fmt(c.viewModelX), x, firstY, colWidth,
                     () -> c.viewModelX = stepFloat(c.viewModelX, -0.50f, 0.50f, 0.05f));
-                addSetting("POSITION Y: " + fmt(c.viewModelY), x2, firstY, colWidth,
+                addSetting("ПОЗИЦИЯ Y: " + fmt(c.viewModelY), x2, firstY, colWidth,
                     () -> c.viewModelY = stepFloat(c.viewModelY, -0.50f, 0.50f, 0.05f));
-                addSetting("POSITION Z: " + fmt(c.viewModelZ), x, firstY + 34, colWidth,
+                addSetting("ПОЗИЦИЯ Z: " + fmt(c.viewModelZ), x, firstY + 34, colWidth,
                     () -> c.viewModelZ = stepFloat(c.viewModelZ, -0.50f, 0.50f, 0.05f));
-                addSetting("SCALE: " + fmt(c.viewModelScale), x2, firstY + 34, colWidth,
+                addSetting("МАСШТАБ: " + fmt(c.viewModelScale), x2, firstY + 34, colWidth,
                     () -> c.viewModelScale = stepFloat(c.viewModelScale, 0.50f, 1.50f, 0.05f));
-                addSetting("ROTATION X: " + fmt(c.viewModelRotX), x, firstY + 68, colWidth,
+                addSetting("ПОВОРОТ X: " + fmt(c.viewModelRotX), x, firstY + 68, colWidth,
                     () -> c.viewModelRotX = stepFloat(c.viewModelRotX, -180f, 180f, 10f));
-                addSetting("ROTATION Y: " + fmt(c.viewModelRotY), x2, firstY + 68, colWidth,
+                addSetting("ПОВОРОТ Y: " + fmt(c.viewModelRotY), x2, firstY + 68, colWidth,
                     () -> c.viewModelRotY = stepFloat(c.viewModelRotY, -180f, 180f, 10f));
-                addSetting("ROTATION Z: " + fmt(c.viewModelRotZ), x, firstY + 102, colWidth,
+                addSetting("ПОВОРОТ Z: " + fmt(c.viewModelRotZ), x, firstY + 102, colWidth,
                     () -> c.viewModelRotZ = stepFloat(c.viewModelRotZ, -180f, 180f, 10f));
             }
             case "customSwing" -> {
-                addSetting("SWING SPEED: " + fmt(c.swingSpeed), x, firstY, colWidth,
+                addSetting("СКОРОСТЬ ЗАМАХА: " + fmt(c.swingSpeed), x, firstY, colWidth,
                     () -> c.swingSpeed = stepFloat(c.swingSpeed, 0.50f, 2.50f, 0.25f));
-                addSetting("SWING STRENGTH: " + fmt(c.swingStrength), x2, firstY, colWidth,
+                addSetting("СИЛА ЗАМАХА: " + fmt(c.swingStrength), x2, firstY, colWidth,
                     () -> c.swingStrength = stepFloat(c.swingStrength, 0.25f, 1.50f, 0.10f));
                 addSetting("ROTATION X: " + fmt(c.swingRotationX), x, firstY + 34, colWidth,
                     () -> c.swingRotationX = stepFloat(c.swingRotationX, -90f, 90f, 5f));
@@ -291,32 +290,32 @@ public final class VisualConfigScreen extends Screen {
                     () -> c.swingRotationZ = stepFloat(c.swingRotationZ, -90f, 90f, 5f));
             }
             case "customCrosshair" -> {
-                addSetting("SIZE: " + c.crosshairSize, x, firstY, colWidth,
+                addSetting("РАЗМЕР: " + c.crosshairSize, x, firstY, colWidth,
                     () -> c.crosshairSize = c.crosshairSize >= 16 ? 3 : c.crosshairSize + 1);
-                addSetting("GAP: " + c.crosshairGap, x2, firstY, colWidth,
+                addSetting("ЗАЗОР: " + c.crosshairGap, x2, firstY, colWidth,
                     () -> c.crosshairGap = c.crosshairGap >= 12 ? 1 : c.crosshairGap + 1);
-                addSetting("THICKNESS: " + c.crosshairThickness, x, firstY + 34, colWidth,
+                addSetting("ТОЛЩИНА: " + c.crosshairThickness, x, firstY + 34, colWidth,
                     () -> c.crosshairThickness = c.crosshairThickness >= 6 ? 1 : c.crosshairThickness + 1);
             }
             case "theme" -> {
-                String[] palettes = {"CYAN", "VIOLET", "RED", "MINT", "GOLD", "PINK"};
-                addSetting("ACCENT: " + palettes[Math.floorMod(c.colorPreset, palettes.length)],
+                String[] palettes = {"БИРЮЗОВЫЙ", "ФИОЛЕТОВЫЙ", "КРАСНЫЙ", "МЯТНЫЙ", "ЗОЛОТОЙ", "РОЗОВЫЙ"};
+                addSetting("ЦВЕТ: " + palettes[Math.floorMod(c.colorPreset, palettes.length)],
                     x, firstY, colWidth, () -> c.colorPreset = (c.colorPreset + 1) % palettes.length);
-                addSetting("HUD OPACITY: " + Math.round(c.hudOpacity * 100) + "%",
+                addSetting("ПРОЗРАЧНОСТЬ HUD: " + Math.round(c.hudOpacity * 100) + "%",
                     x2, firstY, colWidth, () -> c.hudOpacity = stepFloat(c.hudOpacity, 0.25f, 1.0f, 0.05f));
-                addSettingToggle("CHROMA: " + onOff(c.chromaTheme), x, firstY + 34,
+                addSettingToggle("ХРОМА: " + onOff(c.chromaTheme), x, firstY + 34,
                     colWidth, () -> c.chromaTheme = !c.chromaTheme);
-                addSettingToggle("GLASS MENU: " + onOff(c.glassMenu), x2, firstY + 34,
+                addSettingToggle("СТЕКЛЯННОЕ МЕНЮ: " + onOff(c.glassMenu), x2, firstY + 34,
                     colWidth, () -> c.glassMenu = !c.glassMenu);
-                addSettingToggle("ANIMATED ACCENT: " + onOff(c.animatedMenu), x, firstY + 68,
+                addSettingToggle("АНИМАЦИЯ ЦВЕТА: " + onOff(c.animatedMenu), x, firstY + 68,
                     colWidth, () -> c.animatedMenu = !c.animatedMenu);
             }
             case "hudLayout" -> {
-                addSetting("RESET HUD POSITIONS", x, firstY, colWidth, VisualConfig::resetHudPositions);
-                addSetting("HUD OPACITY: " + Math.round(c.hudOpacity * 100) + "%",
+                addSetting("СБРОСИТЬ ПОЗИЦИИ HUD", x, firstY, colWidth, VisualConfig::resetHudPositions);
+                addSetting("ПРОЗРАЧНОСТЬ HUD: " + Math.round(c.hudOpacity * 100) + "%",
                     x2, firstY, colWidth, () -> c.hudOpacity = stepFloat(c.hudOpacity, 0.25f, 1.0f, 0.05f));
             }
-            case "resetConfig" -> addSetting("RESTORE DEFAULT CONFIG", x, firstY,
+            case "resetConfig" -> addSetting("СБРОСИТЬ НАСТРОЙКИ", x, firstY,
                 colWidth, VisualConfig::reset);
             default -> {
                 // Features without numeric options keep their controls simple and safe.
@@ -341,7 +340,7 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private static String onOff(boolean enabled) {
-        return enabled ? "ON" : "OFF";
+        return enabled ? "ВКЛ" : "ВЫКЛ";
     }
 
     private static String fmt(float value) {
@@ -355,9 +354,9 @@ public final class VisualConfigScreen extends Screen {
 
     private static String particleShapeName(int shape) {
         return switch (shape) {
-            case 1 -> "RING";
-            case 2 -> "UPWARD";
-            default -> "BURST";
+            case 1 -> "КОЛЬЦО";
+            case 2 -> "ВВЕРХ";
+            default -> "ВСПЫШКА";
         };
     }
 
@@ -388,7 +387,7 @@ public final class VisualConfigScreen extends Screen {
 
         List<Feature> features = featuresForCategory(VisualConfig.get());
         if (features.isEmpty()) {
-            g.drawString(this.font, "No modules in this category yet.", modulesX() + 12, t + 83, MUTED, false);
+            g.drawString(this.font, "В этой категории пока нет модулей.", modulesX() + 12, t + 83, MUTED, false);
         } else {
             int listTop = t + 66;
             for (int i = 0; i < features.size(); i++) {
@@ -409,25 +408,25 @@ public final class VisualConfigScreen extends Screen {
                 sx + 12, t + 62, TEXT, true);
             g.drawString(this.font, selected.description(), sx + 12, t + 83, MUTED, false);
             g.fill(sx + 12, t + 99, sx + sw - 12, t + 100, 0x664D5360);
-            g.drawString(this.font, "SETTINGS", sx + 12, t + 111, PINK, true);
+            g.drawString(this.font, "НАСТРОЙКИ", sx + 12, t + 111, PINK, true);
             if (selected.toggle() == null) {
-                g.drawString(this.font, "Choose an option below.", sx + 12, t + 128, MUTED, false);
+                g.drawString(this.font, "Выберите параметр ниже.", sx + 12, t + 128, MUTED, false);
             } else if (selected.id().equals("targetEsp")) {
-                g.drawString(this.font, "Draws a ring at the last attacked living entity.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, "Рисует кольцо вокруг последней атакованной цели.", sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
-                g.drawString(this.font, "Prediction is rendered in the 3D world.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, "Прогноз отображается в игровом мире.", sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("hitRange")) {
-                g.drawString(this.font, "The range ring is fixed at three blocks.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, "Радиус кольца фиксирован: 3 блока.", sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("resetConfig")) {
-                g.drawString(this.font, "Restore the module toggles and values to defaults.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, "Вернуть переключатели и параметры по умолчанию.", sx + 12, t + 133, MUTED, false);
             }
         } else if (category.equals("Exploit") || category.equals("Friends")) {
-            g.drawString(this.font, "Nothing here yet", sx + 16, t + 80, MUTED, false);
-            g.drawString(this.font, "This category is reserved for future modules.", sx + 16, t + 99, MUTED, false);
+            g.drawString(this.font, "Здесь пока пусто", sx + 16, t + 80, MUTED, false);
+            g.drawString(this.font, "Категория зарезервирована для будущих модулей.", sx + 16, t + 99, MUTED, false);
         }
 
-        g.drawString(this.font, "v1.0.4", l + 18, t + h - 55, MUTED, false);
-        g.drawString(this.font, "RIGHT SHIFT  •  SELECT A MODULE  •  CHANGE ITS SETTINGS",
+        g.drawString(this.font, "КОТКОД  •  1.0.5", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ НАСТРОЙКИ",
             l + 148, t + h - 28, MUTED, false);
 
         super.render(g, mouseX, mouseY, delta);
