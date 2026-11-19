@@ -75,6 +75,11 @@ public final class VisualConfig {
     public boolean roundedMenu = false;
     public boolean animatedMenu = false;
     public boolean chromaTheme = false;
+    // HSV color picker values (hue in degrees, saturation/value in 0..1 range).
+    public float colorHue = 337.0f;
+    public float colorSaturation = 0.78f;
+    public float colorValue = 1.0f;
+    // Kept for compatibility with older configuration files.
     public int colorPreset = 0;
     public float menuScale = 1.0f;
     public float hudOpacity = 0.72f;
@@ -123,56 +128,41 @@ public final class VisualConfig {
 
     public static int accentColor() {
         VisualConfig cfg = get();
-        if (cfg.chromaTheme || cfg.animatedMenu) {
-            float phase = (System.currentTimeMillis() % 5000L) / 5000.0f;
-            float red = (float) (Math.sin(phase * Math.PI * 2.0) * 0.5 + 0.5);
-            float green = (float) (Math.sin((phase + 0.3333f) * Math.PI * 2.0) * 0.5 + 0.5);
-            float blue = (float) (Math.sin((phase + 0.6666f) * Math.PI * 2.0) * 0.5 + 0.5);
-            return 0xFF000000 | ((int) (red * 255) << 16) | ((int) (green * 255) << 8) | (int) (blue * 255);
-        }
-        return switch (cfg.colorPreset) {
-            case 1 -> 0xFFB58CFF;
-            case 2 -> 0xFFFF657A;
-            case 3 -> 0xFF62E6A7;
-            case 4 -> 0xFFFFC45C;
-            case 5 -> 0xFFFF82C8;
-            default -> 0xFF56D8FF;
-        };
+        return hsvToRgb(cfg.colorHue, cfg.colorSaturation, cfg.colorValue);
+    }
+
+    public static int hsvToRgb(float hue, float saturation, float value) {
+        float h = ((hue % 360.0f) + 360.0f) % 360.0f;
+        float s = Math.max(0.0f, Math.min(1.0f, saturation));
+        float v = Math.max(0.0f, Math.min(1.0f, value));
+        float chroma = v * s;
+        float x = chroma * (1.0f - Math.abs((h / 60.0f) % 2.0f - 1.0f));
+        float m = v - chroma;
+        float r;
+        float g;
+        float b;
+        if (h < 60.0f) { r = chroma; g = x; b = 0.0f; }
+        else if (h < 120.0f) { r = x; g = chroma; b = 0.0f; }
+        else if (h < 180.0f) { r = 0.0f; g = chroma; b = x; }
+        else if (h < 240.0f) { r = 0.0f; g = x; b = chroma; }
+        else if (h < 300.0f) { r = x; g = 0.0f; b = chroma; }
+        else { r = chroma; g = 0.0f; b = x; }
+        int red = Math.round((r + m) * 255.0f);
+        int green = Math.round((g + m) * 255.0f);
+        int blue = Math.round((b + m) * 255.0f);
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
     public static int panelColor() {
-        VisualConfig cfg = get();
-        int rgb = switch (cfg.colorPreset) {
-            case 1 -> 0x00181329;
-            case 2 -> 0x00241319;
-            case 3 -> 0x0010231D;
-            case 4 -> 0x00241D10;
-            case 5 -> 0x00251421;
-            default -> 0x000C1724;
-        };
-        return ((cfg.glassMenu ? 0xB8 : 0xEE) << 24) | rgb;
+        return 0xEE11141B;
     }
 
     public static int widgetColor() {
-        return switch (get().colorPreset) {
-            case 1 -> 0xCC29203D;
-            case 2 -> 0xCC3A2029;
-            case 3 -> 0xCC1B382D;
-            case 4 -> 0xCC3A2E1C;
-            case 5 -> 0xCC3B2033;
-            default -> 0xCC183247;
-        };
+        return 0xCC262B36;
     }
 
     public static int mutedColor() {
-        return switch (get().colorPreset) {
-            case 1 -> 0xFFBBA8D7;
-            case 2 -> 0xFFE0A3AB;
-            case 3 -> 0xFF9CCDB8;
-            case 4 -> 0xFFE2C38B;
-            case 5 -> 0xFFE0A9CB;
-            default -> 0xFF9BB5C9;
-        };
+        return 0xFFA0A5B2;
     }
 
     private static VisualConfig INSTANCE;
