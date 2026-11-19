@@ -38,10 +38,15 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             if (client.player == null || client.level == null) return;
 
             VisualConfig cfg = VisualConfig.get();
-            VisualHud.tick();
-            WorldTrailRenderer.tick();
-            VisualEffects.playerCosmetics();
-            VisualEffects.worldAmbience();
+            try {
+                VisualHud.tick();
+                WorldTrailRenderer.tick();
+                VisualEffects.playerCosmetics();
+                VisualEffects.worldAmbience();
+            } catch (Throwable visualError) {
+                // Visuals must never be able to kick the client out of a world.
+                System.err.println("[KotAndSraka Visuals] Disabled one visual tick after an error: " + visualError);
+            }
 
             boolean ground = client.player.onGround();
             if (cfg.autoSprint && client.player.isAlive() && ground
