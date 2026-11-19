@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -15,6 +16,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Comparator;
 
 public final class VisualHud {
     private static LivingEntity target;
@@ -132,6 +134,9 @@ public final class VisualHud {
         }
 
         renderInfoHud(graphics, mc, cfg);
+        if (cfg.potionHud && (!mc.player.getActiveEffects().isEmpty() || editingChat)) {
+            renderEffectsHud(graphics, mc, cfg, editingChat);
+        }
         renderActiveModules(graphics, mc, cfg);
 
         if (editingChat) {
@@ -140,11 +145,15 @@ public final class VisualHud {
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
                 HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "КЛАВИШИ");
             int statRows = infoHudLineCount(cfg);
-            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5, 225, statRows * 12 + 12, "ИНФО");
-            int moduleCount = activeModuleCount(cfg);
-            if (cfg.activeModulesHud && moduleCount > 0) {
+            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5,
+                infoHudWidth(mc, cfg), statRows * 12 + 12, "ИНФО");
+            if (cfg.activeModulesHud && activeModuleCount(cfg) > 0) {
                 HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
-                    112, moduleCount * 11 + 22, "МОДУЛИ");
+                    activeModulesWidth(mc, cfg), activeModulesHeight(cfg), "МОДУЛИ");
+            }
+            if (cfg.potionHud) {
+                HudLayoutEditor.drawFrame(graphics, cfg.effectsHudX, cfg.effectsHudY,
+                    effectsHudWidth(mc, cfg), effectsHudHeight(mc, cfg), "ЭФФЕКТЫ");
             }
             graphics.drawCenteredString(mc.font, "ПЕРЕМЕЩЕНИЕ HUD  •  ЗАЖМИ ЛКМ НА ПАНЕЛИ И ПЕРЕТАЩИ ЕЁ",
                 graphics.guiWidth() / 2, 5, VisualConfig.accentColor());
@@ -211,7 +220,6 @@ public final class VisualHud {
         if (cfg.coordsHud) lines.add(String.format("XYZ  %d  %d  %d", mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()));
         if (cfg.speedHud) lines.add(String.format("СКОРОСТЬ  %.2f бл/с", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
         if (cfg.totemHud) lines.add("ТОТЕМЫ  " + countTotems(mc));
-        if (cfg.potionHud) lines.add("ЭФФЕКТЫ  " + mc.player.getActiveEffects().size());
         if (cfg.clockHud) lines.add("ВРЕМЯ  " + worldClock(mc));
         if (cfg.compassHud) {
             Direction direction = mc.player.getDirection();
@@ -221,8 +229,7 @@ public final class VisualHud {
 
         int x = cfg.hudX;
         int y = cfg.hudY;
-        int width = 0;
-        for (String line : lines) width = Math.max(width, mc.font.width(line));
+        int width = infoHudWidth(mc, cfg) - 19;
         int alpha = Math.max(48, Math.min(230, (int) (cfg.hudOpacity * 255)));
         int background = (alpha << 24) | (VisualConfig.panelColor() & 0x00FFFFFF);
         g.fill(x - 5, y - 5, x + width + 14, y + lines.size() * 12 + 2, background);
@@ -284,7 +291,6 @@ public final class VisualHud {
         if (c.coordsHud) count++;
         if (c.speedHud) count++;
         if (c.totemHud) count++;
-        if (c.potionHud) count++;
         if (c.clockHud) count++;
         if (c.compassHud) count++;
         return count;
@@ -314,7 +320,103 @@ public final class VisualHud {
         if (c.viewModel) list.add("Положение рук");
         if (c.customSwing) list.add("Настройка удара");
         if (c.customFire) list.add("Огонь от первого лица");
+        if (c.playerGlow) list.add("Свечение игроков");
+        if (c.chestGlow) list.add("Свечение сундуков");
         return list;
+    }
+
+    public static int activeModulesWidth(Minecraft mc, VisualConfig cfg) {
+        List<String> modules = activeModules(cfg);
+        if (modules.isEmpty()) return 0;
+        int width = mc.font.width("KOTCODE");
+        for (String module : modules) width = Math.max(width, mc.font.width(module));
+        return width + 14;
+    }
+
+    public static int activeModulesHeight(VisualConfig cfg) {
+        return activeModules(cfg).size() * 12 + 20;
+    }
+
+    private static int infoHudWidth(Minecraft mc, VisualConfig cfg) {
+        List<String> lines = infoHudLines(mc, cfg);
+        int width = 0;
+        for (String line : lines) width = Math.max(width, mc.font.width(line));
+        return width + 19;
+    }
+
+    private static List<String> infoHudLines(Minecraft mc, VisualConfig cfg) {
+        List<String> lines = new ArrayList<>();
+        if (cfg.fpsHud) lines.add("КАДРЫ  " + mc.getFps());
+        if (cfg.cpsHud) lines.add("КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size());
+        if (cfg.pingHud) {
+            int ping = 0;
+            if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
+                ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
+            }
+            lines.add("ПИНГ  " + ping + " мс");
+        }
+        if (cfg.coordsHud) lines.add(String.format("XYZ  %d  %d  %d", mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()));
+        if (cfg.speedHud) lines.add(String.format("СКОРОСТЬ  %.2f бл/с", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
+        if (cfg.totemHud) lines.add("ТОТЕМЫ  " + countTotems(mc));
+        if (cfg.clockHud) lines.add("ВРЕМЯ  " + worldClock(mc));
+        if (cfg.compassHud) lines.add("НАПРАВЛЕНИЕ  " + mc.player.getDirection().getName().toUpperCase());
+        return lines;
+    }
+
+    private static List<String> effectLines(Minecraft mc, boolean preview) {
+        List<String> lines = new ArrayList<>();
+        if (mc.player == null) return preview ? List.of("Нет активных эффектов") : lines;
+
+        List<MobEffectInstance> effects = new ArrayList<>(mc.player.getActiveEffects());
+        effects.sort(Comparator.comparing(effect -> effect.getEffect().value().getDisplayName().getString()));
+        for (MobEffectInstance effect : effects) {
+            String name = effect.getEffect().value().getDisplayName().getString();
+            String level = effectLevel(effect.getAmplifier() + 1);
+            String duration = effect.isInfiniteDuration() ? "∞" : formatEffectDuration(effect.getDuration());
+            lines.add(name + " " + level + "   " + duration);
+        }
+        if (lines.isEmpty() && preview) lines.add("Нет активных эффектов");
+        return lines;
+    }
+
+    private static String effectLevel(int level) {
+        String[] roman = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+        return level >= 1 && level <= roman.length ? roman[level - 1] : "ур. " + level;
+    }
+
+    private static String formatEffectDuration(int ticks) {
+        if (ticks < 0) return "∞";
+        int seconds = ticks / 20;
+        return String.format("%02d:%02d", seconds / 60, seconds % 60);
+    }
+
+    public static int effectsHudWidth(Minecraft mc, VisualConfig cfg) {
+        List<String> lines = effectLines(mc, true);
+        int width = mc.font.width("ЭФФЕКТЫ");
+        for (String line : lines) width = Math.max(width, mc.font.width(line));
+        return Math.max(118, width + 16);
+    }
+
+    public static int effectsHudHeight(Minecraft mc, VisualConfig cfg) {
+        return effectLines(mc, true).size() * 12 + 22;
+    }
+
+    private static void renderEffectsHud(GuiGraphics graphics, Minecraft mc, VisualConfig cfg, boolean preview) {
+        List<String> lines = effectLines(mc, preview);
+        if (lines.isEmpty()) return;
+
+        int x = cfg.effectsHudX;
+        int y = cfg.effectsHudY;
+        int width = effectsHudWidth(mc, cfg);
+        int height = effectsHudHeight(mc, cfg);
+        graphics.fill(x, y, x + width, y + height, VisualConfig.panelColor());
+        graphics.fill(x, y, x + width, y + 2, VisualConfig.accentColor());
+        graphics.fill(x, y + 2, x + 2, y + height, VisualConfig.accentColor());
+        graphics.drawString(mc.font, "ЭФФЕКТЫ", x + 7, y + 6, VisualConfig.accentColor(), true);
+        for (int i = 0; i < lines.size(); i++) {
+            graphics.drawString(mc.font, lines.get(i), x + 7, y + 19 + i * 12,
+                0xFFF0F0F4, false);
+        }
     }
 
     private static void renderArmorHud(GuiGraphics g, Minecraft mc) {
