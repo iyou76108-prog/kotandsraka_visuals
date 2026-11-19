@@ -219,10 +219,21 @@ public final class WorldTrailRenderer {
         int red = (color >>> 16) & 255;
         int green = (color >>> 8) & 255;
         int blue = color & 255;
+        // The 1.21.11 LINES vertex format requires a normal for every vertex.
+        // The lines shader interprets this normal as the direction along the segment.
+        float dx = (float) (b.x - a.x);
+        float dy = (float) (b.y - a.y);
+        float dz = (float) (b.z - a.z);
+        float length = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (length < 1.0e-6f) return;
+
+        float nx = dx / length;
+        float ny = dy / length;
+        float nz = dz / length;
         consumer.addVertex(pose, (float) a.x, (float) a.y, (float) a.z)
-            .setColor(red, green, blue, alpha).setLineWidth(width);
+            .setColor(red, green, blue, alpha).setNormal(nx, ny, nz).setLineWidth(width);
         consumer.addVertex(pose, (float) b.x, (float) b.y, (float) b.z)
-            .setColor(red, green, blue, alpha).setLineWidth(width);
+            .setColor(red, green, blue, alpha).setNormal(nx, ny, nz).setLineWidth(width);
     }
 
     private static int rainbowColor(float phase, int alpha) {
