@@ -22,6 +22,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
     public void onInitializeClient() {
         VisualConfig.load();
         WorldTrailRenderer.register();
+        XrayRenderer.register();
         OPEN_MENU = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.kotandsraka_visuals.open_menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT,
             new KeyMapping.Category(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "main"))
