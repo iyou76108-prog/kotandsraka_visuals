@@ -252,10 +252,6 @@ public final class WorldTrailRenderer {
         }
     }
 
-    private static int withAlpha(int color, int alpha) {
-        return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
-    }
-
     private static void drawPath(VertexConsumer line, PoseStack.Pose pose, Deque<Vec3> points,
                                  Integer fixedColor, float width, int tick) {
         Vec3 previous = null;
