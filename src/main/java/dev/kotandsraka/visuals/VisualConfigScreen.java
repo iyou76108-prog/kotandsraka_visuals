@@ -145,7 +145,7 @@ public final class VisualConfigScreen extends Screen {
             int rowHeight = Math.max(18, moduleRowHeight - 3);
             final String id = feature.id();
 
-            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.name())).withStyle(style -> style.withItalic(true)), b -> {
+            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.name())).withStyle(style -> style.withItalic(true).withColor(VisualConfig.moduleTextColor())), b -> {
                 selectedId = id;
                 rememberSelection();
                 rebuild();
@@ -253,6 +253,8 @@ public final class VisualConfigScreen extends Screen {
                 list.add(new Feature("theme", "Оформление", "Цветовой акцент и внешний вид меню", false, null));
                 list.add(new Feature("hudLayout", "Положение HUD", "Сбросить положение перемещаемых панелей HUD", false, null));
                 list.add(new Feature("resetConfig", "Сброс настроек", "Вернуть настройки всех модулей по умолчанию", false, null));
+                list.add(new Feature("moduleTextColor", "Цвет названий функций",
+                    "Отдельный цвет текста названий в Shift и HUD активных модулей", false, null));
             }
             case "Друзья" -> {
                 add(list, "friendGlow", "Обводка друзей",
@@ -478,11 +480,14 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private int pickerY() {
-        return top() + ("friendList".equals(selectedId) ? 340 : 148);
+        if ("friendList".equals(selectedId)) return top() + 340;
+        if ("moduleTextColor".equals(selectedId)) return top() + 185;
+        return top() + 148;
     }
 
     private boolean hasColorPicker() {
-        return "theme".equals(selectedId) || "friendList".equals(selectedId);
+        return "theme".equals(selectedId) || "friendList".equals(selectedId)
+            || "moduleTextColor".equals(selectedId);
     }
 
     private int pickerWidth() {
@@ -504,19 +509,27 @@ public final class VisualConfigScreen extends Screen {
     private void updateColorPicker(double mouseX, double mouseY, boolean hue) {
         VisualConfig cfg = VisualConfig.get();
         boolean friendPicker = "friendList".equals(selectedId);
+        boolean textPicker = "moduleTextColor".equals(selectedId);
         if (hue) {
             float amount = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
-            if (friendPicker) cfg.friendColorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
-            else cfg.colorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
+            float nextHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
+            if (friendPicker) cfg.friendColorHue = nextHue;
+            else if (textPicker) cfg.moduleTextHue = nextHue;
+            else cfg.colorHue = nextHue;
         } else {
             float saturation = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
-            float value = 1.0f - (float) ((mouseY - pickerY()) / Math.max(1.0, pickerHeight()));
+            float brightness = 1.0f - (float) ((mouseY - pickerY()) / Math.max(1.0, pickerHeight()));
+            saturation = Math.max(0.0f, Math.min(1.0f, saturation));
+            brightness = Math.max(0.0f, Math.min(1.0f, brightness));
             if (friendPicker) {
-                cfg.friendColorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
-                cfg.friendColorValue = Math.max(0.0f, Math.min(1.0f, value));
+                cfg.friendColorSaturation = saturation;
+                cfg.friendColorValue = brightness;
+            } else if (textPicker) {
+                cfg.moduleTextSaturation = saturation;
+                cfg.moduleTextValue = brightness;
             } else {
-                cfg.colorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
-                cfg.colorValue = Math.max(0.0f, Math.min(1.0f, value));
+                cfg.colorSaturation = saturation;
+                cfg.colorValue = brightness;
             }
         }
     }
@@ -526,18 +539,23 @@ public final class VisualConfigScreen extends Screen {
 
         VisualConfig cfg = VisualConfig.get();
         boolean friendPicker = "friendList".equals(selectedId);
-        float hue = friendPicker ? cfg.friendColorHue : cfg.colorHue;
-        float saturationValue = friendPicker ? cfg.friendColorSaturation : cfg.colorSaturation;
-        float brightnessValue = friendPicker ? cfg.friendColorValue : cfg.colorValue;
-        int color = friendPicker ? VisualConfig.friendAccentColor() : VisualConfig.accentColor();
+        boolean textPicker = "moduleTextColor".equals(selectedId);
+        float hue = friendPicker ? cfg.friendColorHue
+            : textPicker ? cfg.moduleTextHue : cfg.colorHue;
+        float saturationValue = friendPicker ? cfg.friendColorSaturation
+            : textPicker ? cfg.moduleTextSaturation : cfg.colorSaturation;
+        float brightnessValue = friendPicker ? cfg.friendColorValue
+            : textPicker ? cfg.moduleTextValue : cfg.colorValue;
+        int color = friendPicker ? VisualConfig.friendAccentColor()
+            : textPicker ? VisualConfig.moduleTextColor() : VisualConfig.accentColor();
         int x = pickerX();
         int y = pickerY();
         int width = pickerWidth();
         int height = pickerHeight();
 
-        graphics.drawString(this.font,
-            KotCodeLanguage.text(friendPicker ? "ЦВЕТ ОБВОДКИ ДРУЗЕЙ" : "ВЫБОР ЦВЕТА"),
-            x, y - 18, color, true);
+        String pickerTitle = friendPicker ? "ЦВЕТ ОБВОДКИ ДРУЗЕЙ"
+            : textPicker ? "Цвет названий функций" : "ВЫБОР ЦВЕТА";
+        graphics.drawString(this.font, KotCodeLanguage.text(pickerTitle), x, y - 18, color, true);
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF080A0F);
 
         int columns = 64;
@@ -714,6 +732,11 @@ public final class VisualConfigScreen extends Screen {
                 }
             } else if (selected.toggle() == null) {
                 g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
+            } else if (selected.id().equals("moduleTextColor")) {
+                g.drawString(this.font, KotCodeLanguage.text("ПРИМЕР НАЗВАНИЙ ФУНКЦИЙ"),
+                    sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Шляпа  •  Авто-бег  •  След игрока"),
+                    sx + 12, t + 151, VisualConfig.moduleTextColor(), true);
             } else if (selected.id().equals("targetEsp")) {
                 g.drawString(this.font, KotCodeLanguage.text("Рисует кольцо вокруг последней атакованной цели."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
@@ -725,7 +748,7 @@ public final class VisualConfigScreen extends Screen {
             }
         }
 
-        g.drawString(this.font, "KOTCODE  •  1.0.13", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "KOTCODE  •  1.0.14", l + 18, t + h - 55, MUTED, false);
         g.drawString(this.font, KotCodeLanguage.text("RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ"),
             l + 148, t + h - 28, MUTED, false);
 
