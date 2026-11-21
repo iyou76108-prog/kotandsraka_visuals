@@ -212,9 +212,9 @@ public final class VisualConfigScreen extends Screen {
             }
             case "Мир" -> {
                 add(list, "worldParticles", "Частицы мира", "Окружающие частицы вокруг игрока", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
-                add(list, "pearlTrail", "След жемчуга", "След за вашими жемчужинами Края", c.pearlTrail, () -> c.pearlTrail = !c.pearlTrail);
-                add(list, "trajectory", "Траектория", "Баллистическая траектория по направлению взгляда", c.trajectory, () -> c.trajectory = !c.trajectory);
-                add(list, "arrowTrajectory", "Прогноз стрелы", "Показывать предполагаемый путь выпущенных стрел", c.arrowTrajectory, () -> c.arrowTrajectory = !c.arrowTrajectory);
+                add(list, "trajectory", "Траектория",
+                    "Путь жемчугов, стрел, вихревых зарядов и трезубцев с отметкой блока столкновения",
+                    c.trajectory, () -> c.trajectory = !c.trajectory);
                 add(list, "chinaHat", "Шляпа", "Кольцо над головой в режиме от третьего лица", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
                 add(list, "bodyGlow", "Свечение тела", "Декоративные частицы вращаются вокруг вас", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
                 add(list, "trailRainbow", "Радужный след", "Плавно менять цвета следа", c.trailRainbow, () -> c.trailRainbow = !c.trailRainbow);
@@ -315,7 +315,7 @@ public final class VisualConfigScreen extends Screen {
                 addSettingToggle("КРИТИЧЕСКИЕ ЧАСТИЦЫ: " + onOff(c.criticalParticles),
                     x, firstY + 204, colWidth, () -> c.criticalParticles = !c.criticalParticles);
             }
-            case "playerTrail", "pearlTrail", "trailRainbow" -> {
+            case "playerTrail", "trailRainbow" -> {
                 addSlider("ШИРИНА СЛЕДА", x, firstY, colWidth, 1.0, 5.0, 0.1, c.trailWidth,
                     v -> c.trailWidth = (float) v);
                 addSlider("ДЛИНА СЛЕДА", x, firstY + 34, colWidth, 8, 80, 1, c.trailLength,
@@ -831,7 +831,7 @@ public final class VisualConfigScreen extends Screen {
                 g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
             } else if (selected.id().equals("targetEsp")) {
                 g.drawString(this.font, KotCodeLanguage.text("Рисует кольцо вокруг последней атакованной цели."), sx + 12, t + 133, MUTED, false);
-            } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
+            } else if (selected.id().equals("trajectory")) {
                 g.drawString(this.font, KotCodeLanguage.text("Прогноз отображается в игровом мире."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("hitRange")) {
                 g.drawString(this.font, KotCodeLanguage.text("Радиус кольца фиксирован: 3 блока."), sx + 12, t + 133, MUTED, false);
