@@ -118,7 +118,7 @@ public final class VisualHud {
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), (alpha << 24) | 0xFFFFFF);
         }
         if (cfg.hitText && now < hitUntil) {
-            String text = critical ? "КРИТ" : "ПОПАДАНИЕ";
+            String text = KotCodeLanguage.text(critical ? "КРИТ" : "ПОПАДАНИЕ");
             graphics.drawCenteredString(mc.font, text, graphics.guiWidth() / 2,
                 graphics.guiHeight() / 2 - 34, VisualConfig.accentColor());
         }
@@ -138,7 +138,7 @@ public final class VisualHud {
         if (cfg.enemyArmorHud) renderEnemyArmorHud(graphics, mc);
         if (cfg.keystrokes) renderKeystrokes(graphics, mc);
         if (cfg.comboHud && cfg.combo > 0) {
-            graphics.drawCenteredString(mc.font, "КОМБО  " + cfg.combo,
+            graphics.drawCenteredString(mc.font, KotCodeLanguage.text("КОМБО") + "  " + cfg.combo,
                 graphics.guiWidth() / 2, graphics.guiHeight() / 2 + 38, VisualConfig.accentColor());
         }
 
@@ -149,20 +149,20 @@ public final class VisualHud {
         renderActiveModules(graphics, mc, cfg);
 
         if (editingChat) {
-            if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, "ЦЕЛЬ");
-            if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "БРОНЯ");
+            if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, KotCodeLanguage.text("ЦЕЛЬ"));
+            if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, KotCodeLanguage.text("БРОНЯ"));
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
                 HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "КЛАВИШИ");
             drawStatFrames(graphics, mc, cfg);
             if (cfg.activeModulesHud && activeModuleCount(cfg) > 0) {
                 HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
-                    activeModulesWidth(mc, cfg), activeModulesHeight(cfg), "МОДУЛИ");
+                    activeModulesWidth(mc, cfg), activeModulesHeight(cfg), KotCodeLanguage.text("МОДУЛИ"));
             }
             if (cfg.potionHud) {
                 HudLayoutEditor.drawFrame(graphics, cfg.effectsHudX, cfg.effectsHudY,
-                    effectsHudWidth(mc, cfg), effectsHudHeight(mc, cfg), "ЭФФЕКТЫ");
+                    effectsHudWidth(mc, cfg), effectsHudHeight(mc, cfg), KotCodeLanguage.text("ЭФФЕКТЫ"));
             }
-            graphics.drawCenteredString(mc.font, "ПЕРЕМЕЩЕНИЕ HUD  •  ЗАЖМИ ЛКМ НА ПАНЕЛИ И ПЕРЕТАЩИ ЕЁ",
+            graphics.drawCenteredString(mc.font, KotCodeLanguage.text("ПЕРЕМЕЩЕНИЕ HUD  •  ЗАЖМИ ЛКМ НА ПАНЕЛИ И ПЕРЕТАЩИ ЕЁ"),
                 graphics.guiWidth() / 2, 5, VisualConfig.accentColor());
         }
     }
@@ -192,7 +192,7 @@ public final class VisualHud {
                 }
             }
         }
-        g.drawCenteredString(Minecraft.getInstance().font, "ПРЫЖОК", x + 13, y + 28, VisualConfig.mutedColor());
+        g.drawCenteredString(Minecraft.getInstance().font, KotCodeLanguage.text("ПРЫЖОК"), x + 13, y + 28, VisualConfig.mutedColor());
     }
 
     private static void renderCrosshair(GuiGraphics g, Minecraft mc) {
@@ -262,14 +262,14 @@ public final class VisualHud {
 
     private static String statFrameLabel(int id) {
         return switch (id) {
-            case STAT_FPS -> "КАДРЫ";
-            case STAT_CPS -> "КЛИКИ";
-            case STAT_PING -> "ПИНГ";
+            case STAT_FPS -> KotCodeLanguage.text("КАДРЫ");
+            case STAT_CPS -> KotCodeLanguage.text("КЛИКИ");
+            case STAT_PING -> KotCodeLanguage.text("ПИНГ");
             case STAT_COORDS -> "XYZ";
-            case STAT_SPEED -> "СКОРОСТЬ";
-            case STAT_TOTEMS -> "ТОТЕМЫ";
-            case STAT_CLOCK -> "ВРЕМЯ";
-            case STAT_DIRECTION -> "НАПРАВЛЕНИЕ";
+            case STAT_SPEED -> KotCodeLanguage.text("СКОРОСТЬ");
+            case STAT_TOTEMS -> KotCodeLanguage.text("ТОТЕМЫ");
+            case STAT_CLOCK -> KotCodeLanguage.text("ВРЕМЯ");
+            case STAT_DIRECTION -> KotCodeLanguage.text("НАПРАВЛЕНИЕ");
             default -> "HUD";
         };
     }
@@ -333,22 +333,22 @@ public final class VisualHud {
     public static String statText(Minecraft mc, VisualConfig cfg, int id) {
         if (mc.player == null) return "";
         return switch (id) {
-            case STAT_FPS -> "КАДРЫ  " + mc.getFps();
-            case STAT_CPS -> "КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size();
+            case STAT_FPS -> KotCodeLanguage.text("КАДРЫ") + "  " + mc.getFps();
+            case STAT_CPS -> KotCodeLanguage.text("КЛИКИ") + "  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size();
             case STAT_PING -> {
                 int ping = 0;
                 if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
                     ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
                 }
-                yield "ПИНГ  " + ping + " мс";
+                yield KotCodeLanguage.text("ПИНГ") + "  " + ping + KotCodeLanguage.text(" мс");
             }
             case STAT_COORDS -> String.format("XYZ  %d  %d  %d",
                 mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ());
-            case STAT_SPEED -> String.format("СКОРОСТЬ  %.2f бл/с",
+            case STAT_SPEED -> String.format(KotCodeLanguage.text("СКОРОСТЬ") + "  %.2f" + KotCodeLanguage.text(" бл/с"),
                 mc.player.getDeltaMovement().horizontalDistance() * 20.0);
-            case STAT_TOTEMS -> "ТОТЕМЫ  " + countTotems(mc);
-            case STAT_CLOCK -> "ВРЕМЯ  " + worldClock(mc);
-            case STAT_DIRECTION -> "НАПРАВЛЕНИЕ  " + mc.player.getDirection().getName().toUpperCase();
+            case STAT_TOTEMS -> KotCodeLanguage.text("ТОТЕМЫ") + "  " + countTotems(mc);
+            case STAT_CLOCK -> KotCodeLanguage.text("ВРЕМЯ") + "  " + worldClock(mc);
+            case STAT_DIRECTION -> KotCodeLanguage.text("НАПРАВЛЕНИЕ") + "  " + mc.player.getDirection().getName().toUpperCase();
             default -> "";
         };
     }
@@ -404,35 +404,35 @@ public final class VisualHud {
 
     private static List<String> activeModules(VisualConfig c) {
         List<String> list = new ArrayList<>();
-        if (c.hitParticles) list.add("Частицы при ударе");
-        if (c.damageNumbers) list.add("Числа урона");
-        if (c.killEffect) list.add("Эффект убийства");
-        if (c.targetEsp) list.add("Обводка цели");
-        if (c.hitRange) list.add("Дальность удара");
-        if (c.customCrosshair) list.add("Настраиваемый прицел");
-        if (c.playerTrail) list.add("След игрока");
-        if (c.pearlTrail) list.add("След жемчуга");
-        if (c.trajectory) list.add("Траектория");
-        if (c.chinaHat) list.add("Шляпа");
-        if (c.bodyGlow) list.add("Свечение тела");
-        if (c.worldParticles) list.add("Частицы мира");
-        if (c.autoSprint) list.add("Авто-бег");
-        if (c.skullJump) list.add("Череп при прыжке");
-        if (c.comboHud) list.add("Счётчик комбо");
-        if (c.viewModel) list.add("Положение рук");
-        if (c.customSwing) list.add("Настройка удара");
-        if (c.customFire) list.add("Огонь от первого лица");
-        if (c.playerGlow) list.add("Обводка силуэта игроков");
-        if (c.chestGlow) list.add("Свечение сундуков");
-        if (c.enemyArmorHud) list.add("Броня противников");
-        if (c.fpsHud) list.add("Кадры");
-        if (c.cpsHud) list.add("Клики");
-        if (c.pingHud) list.add("Пинг");
-        if (c.coordsHud) list.add("Координаты");
-        if (c.speedHud) list.add("Скорость");
-        if (c.totemHud) list.add("Тотемы");
-        if (c.clockHud) list.add("Время");
-        if (c.compassHud) list.add("Направление");
+        if (c.hitParticles) list.add(KotCodeLanguage.text("Частицы при ударе"));
+        if (c.damageNumbers) list.add(KotCodeLanguage.text("Числа урона"));
+        if (c.killEffect) list.add(KotCodeLanguage.text("Эффект убийства"));
+        if (c.targetEsp) list.add(KotCodeLanguage.text("Обводка цели"));
+        if (c.hitRange) list.add(KotCodeLanguage.text("Дальность удара"));
+        if (c.customCrosshair) list.add(KotCodeLanguage.text("Настраиваемый прицел"));
+        if (c.playerTrail) list.add(KotCodeLanguage.text("След игрока"));
+        if (c.pearlTrail) list.add(KotCodeLanguage.text("След жемчуга"));
+        if (c.trajectory) list.add(KotCodeLanguage.text("Траектория"));
+        if (c.chinaHat) list.add(KotCodeLanguage.text("Шляпа"));
+        if (c.bodyGlow) list.add(KotCodeLanguage.text("Свечение тела"));
+        if (c.worldParticles) list.add(KotCodeLanguage.text("Частицы мира"));
+        if (c.autoSprint) list.add(KotCodeLanguage.text("Авто-бег"));
+        if (c.skullJump) list.add(KotCodeLanguage.text("Череп при прыжке"));
+        if (c.comboHud) list.add(KotCodeLanguage.text("Счётчик комбо"));
+        if (c.viewModel) list.add(KotCodeLanguage.text("Положение рук"));
+        if (c.customSwing) list.add(KotCodeLanguage.text("Настройка удара"));
+        if (c.customFire) list.add(KotCodeLanguage.text("Огонь от первого лица"));
+        if (c.playerGlow) list.add(KotCodeLanguage.text("Обводка силуэта игроков"));
+        if (c.chestGlow) list.add(KotCodeLanguage.text("Свечение сундуков"));
+        if (c.enemyArmorHud) list.add(KotCodeLanguage.text("Броня противников"));
+        if (c.fpsHud) list.add(KotCodeLanguage.text("Кадры"));
+        if (c.cpsHud) list.add(KotCodeLanguage.text("Клики"));
+        if (c.pingHud) list.add(KotCodeLanguage.text("Пинг"));
+        if (c.coordsHud) list.add(KotCodeLanguage.text("Координаты"));
+        if (c.speedHud) list.add(KotCodeLanguage.text("Скорость"));
+        if (c.totemHud) list.add(KotCodeLanguage.text("Тотемы"));
+        if (c.clockHud) list.add(KotCodeLanguage.text("Время"));
+        if (c.compassHud) list.add(KotCodeLanguage.text("Направление"));
         return list;
     }
 
@@ -450,7 +450,7 @@ public final class VisualHud {
 
     private static List<String> effectLines(Minecraft mc, boolean preview) {
         List<String> lines = new ArrayList<>();
-        if (mc.player == null) return preview ? List.of("Нет активных эффектов") : lines;
+        if (mc.player == null) return preview ? List.of(KotCodeLanguage.text("Нет активных эффектов")) : lines;
 
         List<MobEffectInstance> effects = new ArrayList<>(mc.player.getActiveEffects());
         effects.sort(Comparator.comparing(effect -> effect.getEffect().value().getDisplayName().getString()));
@@ -460,13 +460,13 @@ public final class VisualHud {
             String duration = effect.isInfiniteDuration() ? "∞" : formatEffectDuration(effect.getDuration());
             lines.add(name + " " + level + "   " + duration);
         }
-        if (lines.isEmpty() && preview) lines.add("Нет активных эффектов");
+        if (lines.isEmpty() && preview) lines.add(KotCodeLanguage.text("Нет активных эффектов"));
         return lines;
     }
 
     private static String effectLevel(int level) {
         String[] roman = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
-        return level >= 1 && level <= roman.length ? roman[level - 1] : "ур. " + level;
+        return level >= 1 && level <= roman.length ? roman[level - 1] : KotCodeLanguage.text("ур. ") + level;
     }
 
     private static String formatEffectDuration(int ticks) {
@@ -477,7 +477,7 @@ public final class VisualHud {
 
     public static int effectsHudWidth(Minecraft mc, VisualConfig cfg) {
         List<String> lines = effectLines(mc, true);
-        int width = mc.font.width("ЭФФЕКТЫ");
+        int width = mc.font.width(KotCodeLanguage.text("ЭФФЕКТЫ"));
         for (String line : lines) width = Math.max(width, mc.font.width(line));
         return Math.max(118, width + 16);
     }
@@ -497,7 +497,7 @@ public final class VisualHud {
         graphics.fill(x, y, x + width, y + height, VisualConfig.panelColor());
         graphics.fill(x, y, x + width, y + 2, VisualConfig.accentColor());
         graphics.fill(x, y + 2, x + 2, y + height, VisualConfig.accentColor());
-        graphics.drawString(mc.font, "ЭФФЕКТЫ", x + 7, y + 6, VisualConfig.accentColor(), true);
+        graphics.drawString(mc.font, KotCodeLanguage.text("ЭФФЕКТЫ"), x + 7, y + 6, VisualConfig.accentColor(), true);
         for (int i = 0; i < lines.size(); i++) {
             graphics.drawString(mc.font, lines.get(i), x + 7, y + 19 + i * 12,
                 0xFFF0F0F4, false);
@@ -541,7 +541,7 @@ public final class VisualHud {
         double tanHalfFov = Math.tan(fov * 0.5);
         double aspect = (double) g.guiWidth() / (double) g.guiHeight();
         EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-        String[] slotNames = {"Шлем", "Нагрудник", "Поножи", "Ботинки"};
+        String[] slotNames = {KotCodeLanguage.text("Шлем"), KotCodeLanguage.text("Нагрудник"), KotCodeLanguage.text("Поножи"), KotCodeLanguage.text("Ботинки")};
 
         for (Player player : mc.level.players()) {
             if (player == mc.player || !player.isAlive() || player.isInvisibleTo(mc.player)) continue;
@@ -638,14 +638,14 @@ public final class VisualHud {
         int w = 150;
         g.fill(x, y, x + w, y + 42, VisualConfig.panelColor());
         g.fill(x, y, x + w, y + 2, VisualConfig.accentColor());
-        String name = target == null ? "Предпросмотр HUD цели" : target.getName().getString();
+        String name = target == null ? KotCodeLanguage.text("Предпросмотр HUD цели") : target.getName().getString();
         g.drawString(mc.font, name, x + 7, y + 6, 0xFFFFFF, true);
         float health = target == null ? 0.75f : Math.max(0.0F, target.getHealth());
         float max = target == null ? 1.0f : Math.max(1.0F, target.getMaxHealth());
         int bar = (int) ((w - 14) * Math.min(1.0F, health / max));
         g.fill(x + 7, y + 20, x + w - 7, y + 27, 0xFF333333);
         g.fill(x + 7, y + 20, x + 7 + bar, y + 27, VisualConfig.accentColor());
-        g.drawString(mc.font, target == null ? "Перетащите мышью" : String.format("%.1f / %.1f", health, max),
+        g.drawString(mc.font, target == null ? KotCodeLanguage.text("Перетащите мышью") : String.format("%.1f / %.1f", health, max),
             x + 7, y + 30, 0xFFE0E0E0, true);
     }
 
@@ -657,8 +657,8 @@ public final class VisualHud {
         drawKey(g, mc, "A", x, y + 24, mc.options.keyLeft.isDown());
         drawKey(g, mc, "S", x + 26, y + 24, mc.options.keyDown.isDown());
         drawKey(g, mc, "D", x + 52, y + 24, mc.options.keyRight.isDown());
-        drawKey(g, mc, "ЛКМ", x, y + 48, mc.options.keyAttack.isDown());
-        drawKey(g, mc, "ПКМ", x + 52, y + 48, mc.options.keyUse.isDown());
+        drawKey(g, mc, KotCodeLanguage.text("ЛКМ"), x, y + 48, mc.options.keyAttack.isDown());
+        drawKey(g, mc, KotCodeLanguage.text("ПКМ"), x + 52, y + 48, mc.options.keyUse.isDown());
     }
 
     private static void drawKey(GuiGraphics g, Minecraft mc, String label, int x, int y, boolean down) {
