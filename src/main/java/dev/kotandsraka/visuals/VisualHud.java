@@ -1,6 +1,7 @@
 package dev.kotandsraka.visuals;
 
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -17,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Comparator;
+
+import org.joml.Vector3f;
 
 public final class VisualHud {
     private static LivingEntity target;
@@ -127,6 +131,7 @@ public final class VisualHud {
 
         if (cfg.targetHud && (target != null || editingChat)) renderTargetHud(graphics, mc);
         if (cfg.armorHud) renderArmorHud(graphics, mc);
+        if (cfg.enemyArmorHud) renderEnemyArmorHud(graphics, mc);
         if (cfg.keystrokes) renderKeystrokes(graphics, mc);
         if (cfg.comboHud && cfg.combo > 0) {
             graphics.drawCenteredString(mc.font, "КОМБО  " + cfg.combo,
@@ -413,8 +418,9 @@ public final class VisualHud {
         if (c.viewModel) list.add("Положение рук");
         if (c.customSwing) list.add("Настройка удара");
         if (c.customFire) list.add("Огонь от первого лица");
-        if (c.playerGlow) list.add("Свечение игроков");
+        if (c.playerGlow) list.add("Обводка силуэта игроков");
         if (c.chestGlow) list.add("Свечение сундуков");
+        if (c.enemyArmorHud) list.add("Броня противников");
         if (c.fpsHud) list.add("Кадры");
         if (c.cpsHud) list.add("Клики");
         if (c.pingHud) list.add("Пинг");
@@ -510,6 +516,81 @@ public final class VisualHud {
                 int width = Math.max(1, (int) (16.0 * damage / max));
                 g.fill(x + i * 18, y + 18, x + i * 18 + 16, y + 20, 0xFF333333);
                 g.fill(x + i * 18, y + 18, x + i * 18 + width, y + 20, VisualConfig.accentColor());
+            }
+        }
+    }
+
+    /**
+     * Draws the four equipped armor items above each other player's head.
+     * Positions are projected from world space into the scaled HUD viewport.
+     */
+    private static void renderEnemyArmorHud(GuiGraphics g, Minecraft mc) {
+        if (mc.level == null || mc.player == null || g.guiHeight() <= 0) return;
+
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.getPosition();
+        Vector3f forward = new Vector3f(0.0f, 0.0f, -1.0f).rotate(camera.rotation());
+        Vector3f right = new Vector3f(1.0f, 0.0f, 0.0f).rotate(camera.rotation());
+        Vector3f up = new Vector3f(0.0f, 1.0f, 0.0f).rotate(camera.rotation());
+
+        double fov = Math.toRadians(Math.max(30.0, Math.min(110.0, mc.options.fov().get())));
+        double tanHalfFov = Math.tan(fov * 0.5);
+        double aspect = (double) g.guiWidth() / (double) g.guiHeight();
+        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+
+        for (Player player : mc.level.players()) {
+            if (player == mc.player || !player.isAlive() || player.isInvisibleTo(mc.player)) continue;
+            if (player.distanceToSqr(mc.player) > 48.0 * 48.0) continue;
+
+            ItemStack[] armor = new ItemStack[slots.length];
+            boolean hasArmor = false;
+            for (int i = 0; i < slots.length; i++) {
+                armor[i] = player.getItemBySlot(slots[i]);
+                if (!armor[i].isEmpty()) hasArmor = true;
+            }
+            if (!hasArmor) continue;
+
+            double worldX = player.getX();
+            double worldY = player.getY() + player.getBbHeight() + 0.30;
+            double worldZ = player.getZ();
+            double dx = worldX - cameraPos.x;
+            double dy = worldY - cameraPos.y;
+            double dz = worldZ - cameraPos.z;
+
+            double depth = dx * forward.x + dy * forward.y + dz * forward.z;
+            if (depth <= 0.05) continue;
+
+            double cameraRight = dx * right.x + dy * right.y + dz * right.z;
+            double cameraUp = dx * up.x + dy * up.y + dz * up.z;
+            double ndcX = cameraRight / (depth * tanHalfFov * aspect);
+            double ndcY = cameraUp / (depth * tanHalfFov);
+            if (ndcX < -1.15 || ndcX > 1.15 || ndcY < -1.15 || ndcY > 1.15) continue;
+
+            int centerX = (int) Math.round((ndcX * 0.5 + 0.5) * g.guiWidth());
+            int centerY = (int) Math.round((0.5 - ndcY * 0.5) * g.guiHeight());
+            int x = centerX - 39;
+            int y = centerY - 25;
+
+            g.fill(x, y, x + 78, y + 24, 0xCC090C12);
+            g.fill(x, y, x + 78, y + 1, VisualConfig.accentColor());
+
+            for (int i = 0; i < armor.length; i++) {
+                int iconX = x + 3 + i * 18;
+                int iconY = y + 3;
+                ItemStack stack = armor[i];
+                g.fill(iconX, iconY, iconX + 16, iconY + 16, 0x66545B69);
+                if (stack.isEmpty()) continue;
+
+                g.renderItem(stack, iconX, iconY);
+                if (stack.isDamageableItem()) {
+                    int remaining = Math.max(0, stack.getMaxDamage() - stack.getDamageValue());
+                    int barWidth = Math.max(0, Math.min(16,
+                        (int) Math.round(16.0 * remaining / Math.max(1, stack.getMaxDamage()))));
+                    g.fill(iconX, y + 20, iconX + 16, y + 22, 0xFF292D36);
+                    if (barWidth > 0) {
+                        g.fill(iconX, y + 20, iconX + barWidth, y + 22, VisualConfig.accentColor());
+                    }
+                }
             }
         }
     }
