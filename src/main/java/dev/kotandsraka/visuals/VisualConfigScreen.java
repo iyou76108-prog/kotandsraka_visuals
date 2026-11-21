@@ -218,7 +218,7 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "targetEsp", "Обводка цели", "Кольцо вокруг последней атакованной цели", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
                 add(list, "hitRange", "Дальность удара", "Показывать круг радиусом 3 блока", c.hitRange, () -> c.hitRange = !c.hitRange);
                 add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
-                add(list, "playerGlow", "Свечение игроков", "Цветные рамки игроков видны сквозь блоки", c.playerGlow, () -> c.playerGlow = !c.playerGlow);
+                add(list, "playerGlow", "Обводка силуэта игроков", "Контур точно повторяет модель игрока и виден сквозь блоки", c.playerGlow, () -> c.playerGlow = !c.playerGlow);
                 add(list, "chestGlow", "Свечение сундуков", "Подсветка сундуков и эндер-сундуков сквозь стены", c.chestGlow, () -> c.chestGlow = !c.chestGlow);
             }
             case "Игрок" -> {
@@ -227,7 +227,8 @@ public final class VisualConfigScreen extends Screen {
             }
             case "Другое" -> {
                 add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
-                add(list, "armorHud", "HUD брони", "Слоты брони и её прочность", c.armorHud, () -> c.armorHud = !c.armorHud);
+                add(list, "armorHud", "HUD брони", "Слоты вашей брони и её прочность", c.armorHud, () -> c.armorHud = !c.armorHud);
+                add(list, "enemyArmorHud", "Броня противников", "Показывать экипировку других игроков над их головами", c.enemyArmorHud, () -> c.enemyArmorHud = !c.enemyArmorHud);
                 add(list, "keystrokes", "Клавиши", "Отображение нажатий WASD и кнопок мыши", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
                 add(list, "fpsHud", "Кадры", "Показывать частоту кадров в секунду", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
                 add(list, "cpsHud", "Клики", "Отдельный счётчик кликов ЛКМ и ПКМ", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
