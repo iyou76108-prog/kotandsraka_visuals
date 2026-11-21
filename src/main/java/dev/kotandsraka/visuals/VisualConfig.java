@@ -60,6 +60,7 @@ public final class VisualConfig {
     public boolean targetHud = false;
     public boolean keystrokes = false;
     public boolean armorHud = false;
+    public boolean enemyArmorHud = false;
     public boolean fpsHud = false;
     public boolean cpsHud = false;
     public boolean pingHud = false;
