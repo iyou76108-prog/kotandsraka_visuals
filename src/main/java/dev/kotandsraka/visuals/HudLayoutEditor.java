@@ -12,9 +12,16 @@ public final class HudLayoutEditor {
     private static final int TARGET = 0;
     private static final int ARMOR = 1;
     private static final int KEYS = 2;
-    private static final int INFO = 3;
     private static final int MODULES = 4;
     private static final int EFFECTS = 5;
+    private static final int STAT_FPS = 6;
+    private static final int STAT_CPS = 7;
+    private static final int STAT_PING = 8;
+    private static final int STAT_COORDS = 9;
+    private static final int STAT_SPEED = 10;
+    private static final int STAT_TOTEMS = 11;
+    private static final int STAT_CLOCK = 12;
+    private static final int STAT_DIRECTION = 13;
 
     private static int dragging = -1;
     private static int offsetX;
@@ -55,14 +62,14 @@ public final class HudLayoutEditor {
                 return true;
             }
         }
-        int infoRows = VisualHud.infoHudLineCount(cfg);
-        int infoWidth = VisualHud.infoHudWidth(mc, cfg);
-        if (infoRows > 0 && inside(mouseX, mouseY, cfg.hudX - 5, cfg.hudY - 5, infoWidth, infoRows * 12 + 12)) {
-            dragging = INFO;
-            offsetX = (int) mouseX - (cfg.hudX - 5);
-            offsetY = (int) mouseY - (cfg.hudY - 5);
-            return true;
-        }
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_FPS, STAT_FPS)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_CPS, STAT_CPS)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_PING, STAT_PING)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_COORDS, STAT_COORDS)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_SPEED, STAT_SPEED)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_TOTEMS, STAT_TOTEMS)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_CLOCK, STAT_CLOCK)) return true;
+        if (beginStatDrag(mouseX, mouseY, mc, cfg, VisualHud.STAT_DIRECTION, STAT_DIRECTION)) return true;
 
         if (cfg.potionHud && inside(mouseX, mouseY, cfg.effectsHudX, cfg.effectsHudY,
             VisualHud.effectsHudWidth(mc, cfg), VisualHud.effectsHudHeight(mc, cfg))) {
@@ -90,6 +97,20 @@ public final class HudLayoutEditor {
             return true;
         }
         return false;
+    }
+
+    private static boolean beginStatDrag(double mouseX, double mouseY, Minecraft mc,
+                                          VisualConfig cfg, int statId, int dragId) {
+        if (!VisualHud.isStatEnabled(cfg, statId)) return false;
+        int x = VisualHud.statX(cfg, statId);
+        int y = VisualHud.statY(cfg, statId);
+        int width = VisualHud.statWidth(mc, cfg, statId);
+        int height = VisualHud.statHeight();
+        if (!inside(mouseX, mouseY, x, y, width, height)) return false;
+        dragging = dragId;
+        offsetX = (int) mouseX - x;
+        offsetY = (int) mouseY - y;
+        return true;
     }
 
     public static void tick(Minecraft mc) {
@@ -136,10 +157,23 @@ public final class HudLayoutEditor {
                 cfg.keystrokesHudX = clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - 78));
                 cfg.keystrokesHudY = clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - 68));
             }
-            case INFO -> {
-                int width = VisualHud.infoHudWidth(mc, cfg);
-                cfg.hudX = clamp((int) mouseX - offsetX + 5, 0, Math.max(0, screenWidth - width));
-                cfg.hudY = clamp((int) mouseY - offsetY + 5, 0, Math.max(0, screenHeight - 160));
+            case STAT_FPS, STAT_CPS, STAT_PING, STAT_COORDS, STAT_SPEED,
+                 STAT_TOTEMS, STAT_CLOCK, STAT_DIRECTION -> {
+                int statId = switch (dragging) {
+                    case STAT_FPS -> VisualHud.STAT_FPS;
+                    case STAT_CPS -> VisualHud.STAT_CPS;
+                    case STAT_PING -> VisualHud.STAT_PING;
+                    case STAT_COORDS -> VisualHud.STAT_COORDS;
+                    case STAT_SPEED -> VisualHud.STAT_SPEED;
+                    case STAT_TOTEMS -> VisualHud.STAT_TOTEMS;
+                    case STAT_CLOCK -> VisualHud.STAT_CLOCK;
+                    default -> VisualHud.STAT_DIRECTION;
+                };
+                int width = VisualHud.statWidth(mc, cfg, statId);
+                int height = VisualHud.statHeight();
+                VisualHud.setStatPosition(cfg, statId,
+                    clamp((int) mouseX - offsetX, 0, Math.max(0, screenWidth - width)),
+                    clamp((int) mouseY - offsetY, 0, Math.max(0, screenHeight - height)));
             }
             case MODULES -> {
                 int width = VisualHud.activeModulesWidth(mc, cfg);
