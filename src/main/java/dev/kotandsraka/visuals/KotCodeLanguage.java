@@ -46,11 +46,11 @@ public final class KotCodeLanguage {
         put("Показывать череп рядом с прицелом при прыжке", "Show a skull near the crosshair when jumping");
         put("Частицы мира", "World Particles");
         put("Окружающие частицы вокруг игрока", "Ambient particles around the player");
-        put("След жемчуга", "Ender Pearl Trail");
         put("След за вашими жемчужинами Края", "Trail behind your Ender Pearls");
         put("Траектория", "Trajectory");
+        put("Путь жемчугов, стрел, вихревых зарядов и трезубцев с отметкой блока столкновения",
+            "Path of ender pearls, arrows, wind charges and tridents with the impact block marked");
         put("Баллистическая траектория по направлению взгляда", "Ballistic path along your view direction");
-        put("Прогноз стрелы", "Arrow Prediction");
         put("Показывать предполагаемый путь выпущенных стрел", "Show the predicted path of fired arrows");
         put("Шляпа", "Hat");
         put("Кольцо над головой в режиме от третьего лица", "Ring above your head in third-person view");
