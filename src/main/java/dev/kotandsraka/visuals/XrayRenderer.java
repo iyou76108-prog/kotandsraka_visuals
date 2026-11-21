@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
@@ -32,8 +33,13 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Accent-colored translucent boxes rendered with depth testing disabled.
@@ -55,11 +61,72 @@ public final class XrayRenderer {
     private static BufferBuilder builder;
     private static MappableRingBuffer vertexBuffer;
     private static boolean failed;
+    private static final Map<UUID, GlowState> GLOWING_PLAYERS = new HashMap<>();
+
+    private record GlowState(Player player, boolean wasGlowing) {}
 
     private XrayRenderer() {}
 
     public static void register() {
         WorldRenderEvents.BEFORE_TRANSLUCENT.register(XrayRenderer::render);
+        ClientTickEvents.END_CLIENT_TICK.register(XrayRenderer::tickPlayerOutlines);
+    }
+
+    /**
+     * Uses Minecraft's entity-outline pass, which traces the rendered player model
+     * instead of drawing a box around its bounding hitbox.
+     */
+    private static void tickPlayerOutlines(Minecraft mc) {
+        if (mc.level == null || mc.player == null) {
+            restoreAllPlayerOutlines();
+            return;
+        }
+
+        boolean enabled = VisualConfig.get().playerGlow;
+        Set<UUID> seen = new HashSet<>();
+
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Player player) || player == mc.player) continue;
+
+            UUID id = player.getUUID();
+            seen.add(id);
+            boolean shouldGlow = enabled && player.isAlive()
+                && player.distanceToSqr(mc.player) <= 64.0 * 64.0;
+
+            if (shouldGlow) {
+                GlowState state = GLOWING_PLAYERS.get(id);
+                if (state != null && state.player() != player) {
+                    state.player().setGlowingTag(state.wasGlowing());
+                    GLOWING_PLAYERS.remove(id);
+                    state = null;
+                }
+                if (state == null) {
+                    GLOWING_PLAYERS.put(id, new GlowState(player, player.isCurrentlyGlowing()));
+                }
+                player.setGlowingTag(true);
+            } else {
+                restorePlayerOutline(id);
+            }
+        }
+
+        GLOWING_PLAYERS.entrySet().removeIf(entry -> {
+            if (seen.contains(entry.getKey())) return false;
+            GlowState state = entry.getValue();
+            state.player().setGlowingTag(state.wasGlowing());
+            return true;
+        });
+    }
+
+    private static void restorePlayerOutline(UUID id) {
+        GlowState state = GLOWING_PLAYERS.remove(id);
+        if (state != null) state.player().setGlowingTag(state.wasGlowing());
+    }
+
+    private static void restoreAllPlayerOutlines() {
+        for (GlowState state : GLOWING_PLAYERS.values()) {
+            state.player().setGlowingTag(state.wasGlowing());
+        }
+        GLOWING_PLAYERS.clear();
     }
 
     private static void render(WorldRenderContext context) {
@@ -67,7 +134,7 @@ public final class XrayRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         VisualConfig cfg = VisualConfig.get();
-        if (mc.level == null || mc.player == null || (!cfg.playerGlow && !cfg.chestGlow)) return;
+        if (mc.level == null || mc.player == null || !cfg.chestGlow) return;
         if (context.matrices() == null || context.worldState() == null
             || context.worldState().cameraRenderState == null
             || context.worldState().cameraRenderState.pos == null) return;
@@ -78,8 +145,7 @@ public final class XrayRenderer {
             matrices.pushPose();
             try {
                 matrices.translate(-camera.x, -camera.y, -camera.z);
-                if (cfg.playerGlow) renderPlayers(mc, matrices);
-                if (cfg.chestGlow) renderChests(mc, matrices, camera);
+                renderChests(mc, matrices, camera);
             } finally {
                 matrices.popPose();
             }
@@ -96,7 +162,6 @@ public final class XrayRenderer {
             }
             failed = true;
             VisualConfig current = VisualConfig.get();
-            current.playerGlow = false;
             current.chestGlow = false;
             VisualConfig.save();
             System.err.println("[KotCode] X-ray renderer disabled after a render error: " + error);
@@ -108,25 +173,6 @@ public final class XrayRenderer {
             builder = new BufferBuilder(ALLOCATOR, XRAY_FILLED.getVertexFormatMode(), XRAY_FILLED.getVertexFormat());
         }
         return builder;
-    }
-
-    private static void renderPlayers(Minecraft mc, PoseStack matrices) {
-        int color = VisualConfig.accentColor();
-        float red = ((color >> 16) & 255) / 255.0f;
-        float green = ((color >> 8) & 255) / 255.0f;
-        float blue = (color & 255) / 255.0f;
-        BufferBuilder out = getBuilder();
-        Matrix4fc matrix = matrices.last().pose();
-
-        for (Entity entity : mc.level.entitiesForRendering()) {
-            if (!(entity instanceof Player player) || player == mc.player || !player.isAlive()) continue;
-            if (player.distanceToSqr(mc.player) > 64.0 * 64.0) continue;
-            AABB box = player.getBoundingBox().inflate(0.035, 0.025, 0.035);
-            addFilledBox(out, matrix,
-                (float) box.minX, (float) box.minY, (float) box.minZ,
-                (float) box.maxX, (float) box.maxY, (float) box.maxZ,
-                red, green, blue, 0.20f);
-        }
     }
 
     private static void renderChests(Minecraft mc, PoseStack matrices, Vec3 camera) {
