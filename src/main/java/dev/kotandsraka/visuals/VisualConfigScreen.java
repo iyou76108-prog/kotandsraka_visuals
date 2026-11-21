@@ -279,7 +279,7 @@ public final class VisualConfigScreen extends Screen {
         int firstY = t + 132;
 
         if (feature.toggle() != null) {
-            addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ВКЛЮЧЕНО  ●" : "ВЫКЛЮЧЕНО  ○"), b -> {
+            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.enabled() ? "ВКЛЮЧЕНО  ●" : "ВЫКЛЮЧЕНО  ○")), b -> {
                 feature.toggle().run();
                 VisualConfig.save();
                 rebuild();
@@ -437,7 +437,7 @@ public final class VisualConfigScreen extends Screen {
             double current = actualValue();
             String formatted = step >= 1.0 ? String.format("%.0f", current)
                 : step >= 0.1 ? String.format("%.1f", current) : String.format("%.2f", current);
-            setMessage(Component.literal(label + "   " + formatted));
+            setMessage(Component.literal(KotCodeLanguage.text(label) + "   " + formatted));
         }
 
         @Override
@@ -618,7 +618,7 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private void addSetting(String label, int x, int y, int width, Runnable action) {
-        addRenderableWidget(Button.builder(Component.literal(label), b -> {
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(label)), b -> {
             action.run();
             VisualConfig.save();
             rebuild();
@@ -634,7 +634,7 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private static String onOff(boolean enabled) {
-        return enabled ? "ВКЛ" : "ВЫКЛ";
+        return KotCodeLanguage.text(enabled ? "ВКЛ" : "ВЫКЛ");
     }
 
     private static String fmt(float value) {
@@ -648,9 +648,9 @@ public final class VisualConfigScreen extends Screen {
 
     private static String particleShapeName(int shape) {
         return switch (shape) {
-            case 1 -> "КОЛЬЦО";
-            case 2 -> "ВВЕРХ";
-            default -> "ВСПЫШКА";
+            case 1 -> KotCodeLanguage.text("КОЛЬЦО");
+            case 2 -> KotCodeLanguage.text("ВВЕРХ");
+            default -> KotCodeLanguage.text("ВСПЫШКА");
         };
     }
 
@@ -675,13 +675,13 @@ public final class VisualConfigScreen extends Screen {
         g.fill(l + 12, t + h - 40, l + w - 12, t + h - 39, 0x554D5360);
 
         g.drawString(this.font, "KotCode", l + 18, t + 17, VisualConfig.accentColor(), true);
-        g.drawString(this.font, "KOTCODE  /  ВИЗУАЛЬНЫЙ КЛИЕНТ", l + 148, t + 16, TEXT, true);
-        g.drawString(this.font, "НАСТРОЙКИ КЛИЕНТА", l + 148, t + 31, MUTED, false);
-        g.drawString(this.font, category, modulesX() + 7, t + 59, TEXT, true);
+        g.drawString(this.font, KotCodeLanguage.text("KOTCODE  /  ВИЗУАЛЬНЫЙ КЛИЕНТ"), l + 148, t + 16, TEXT, true);
+        g.drawString(this.font, KotCodeLanguage.text("НАСТРОЙКИ КЛИЕНТА"), l + 148, t + 31, MUTED, false);
+        g.drawString(this.font, KotCodeLanguage.text(category), modulesX() + 7, t + 59, TEXT, true);
 
         List<Feature> features = featuresForCategory(VisualConfig.get());
         if (features.isEmpty()) {
-            g.drawString(this.font, "В этой категории пока нет модулей.", modulesX() + 12, t + 83, MUTED, false);
+            g.drawString(this.font, KotCodeLanguage.text("В этой категории пока нет модулей."), modulesX() + 12, t + 83, MUTED, false);
         } else {
             int listTop = t + 66;
             for (int i = 0; i < features.size(); i++) {
@@ -698,29 +698,35 @@ public final class VisualConfigScreen extends Screen {
 
         Feature selected = findSelected(features);
         if (selected != null) {
-            g.drawString(this.font, category.toUpperCase() + "  /  " + selected.name(),
+            g.drawString(this.font, KotCodeLanguage.text(category).toUpperCase() + "  /  " + KotCodeLanguage.text(selected.name()),
                 sx + 12, t + 62, TEXT, true);
-            g.drawString(this.font, selected.description(), sx + 12, t + 83, MUTED, false);
+            g.drawString(this.font, KotCodeLanguage.text(selected.description()), sx + 12, t + 83, MUTED, false);
             g.fill(sx + 12, t + 99, sx + sw - 12, t + 100, 0x664D5360);
-            g.drawString(this.font, "НАСТРОЙКИ", sx + 12, t + 111, VisualConfig.accentColor(), true);
-            if (selected.toggle() == null) {
-                g.drawString(this.font, "Выберите параметр ниже.", sx + 12, t + 128, MUTED, false);
+            g.drawString(this.font, KotCodeLanguage.text("НАСТРОЙКИ"), sx + 12, t + 111, VisualConfig.accentColor(), true);
+            if (selected.id().equals("friendList")) {
+                List<String> friends = VisualConfig.get().friends;
+                if (friends == null || friends.isEmpty()) {
+                    g.drawString(this.font, KotCodeLanguage.text("Пока нет добавленных друзей."),
+                        sx + 12, t + 181, MUTED, false);
+                } else if (friends.size() > 6) {
+                    g.drawString(this.font, KotCodeLanguage.text("Показаны первые 6 друзей. Удаляйте их нажатием на ник."),
+                        sx + 12, t + 318, MUTED, false);
+                }
+            } else if (selected.toggle() == null) {
+                g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
             } else if (selected.id().equals("targetEsp")) {
-                g.drawString(this.font, "Рисует кольцо вокруг последней атакованной цели.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Рисует кольцо вокруг последней атакованной цели."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
-                g.drawString(this.font, "Прогноз отображается в игровом мире.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Прогноз отображается в игровом мире."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("hitRange")) {
-                g.drawString(this.font, "Радиус кольца фиксирован: 3 блока.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Радиус кольца фиксирован: 3 блока."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("resetConfig")) {
-                g.drawString(this.font, "Вернуть переключатели и параметры по умолчанию.", sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Вернуть переключатели и параметры по умолчанию."), sx + 12, t + 133, MUTED, false);
             }
-        } else if (category.equals("Эксплойты") || category.equals("Друзья")) {
-            g.drawString(this.font, "Здесь пока пусто", sx + 16, t + 80, MUTED, false);
-            g.drawString(this.font, "Категория зарезервирована для будущих модулей.", sx + 16, t + 99, MUTED, false);
         }
 
-        g.drawString(this.font, "KOTCODE  •  1.0.12", l + 18, t + h - 55, MUTED, false);
-        g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ",
+        g.drawString(this.font, "KOTCODE  •  1.0.13", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, KotCodeLanguage.text("RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ"),
             l + 148, t + h - 28, MUTED, false);
 
         super.render(g, mouseX, mouseY, delta);
