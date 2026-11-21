@@ -228,7 +228,7 @@ public final class VisualConfigScreen extends Screen {
             case "Другое" -> {
                 add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
                 add(list, "armorHud", "HUD брони", "Слоты вашей брони и её прочность", c.armorHud, () -> c.armorHud = !c.armorHud);
-                add(list, "enemyArmorHud", "Броня противников", "Показывать экипировку других игроков над их головами", c.enemyArmorHud, () -> c.enemyArmorHud = !c.enemyArmorHud);
+                add(list, "enemyArmorHud", "Броня противников", "Показывать броню, прочность и все зачарования над головами игроков", c.enemyArmorHud, () -> c.enemyArmorHud = !c.enemyArmorHud);
                 add(list, "keystrokes", "Клавиши", "Отображение нажатий WASD и кнопок мыши", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
                 add(list, "fpsHud", "Кадры", "Показывать частоту кадров в секунду", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
                 add(list, "cpsHud", "Клики", "Отдельный счётчик кликов ЛКМ и ПКМ", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
@@ -664,7 +664,7 @@ public final class VisualConfigScreen extends Screen {
             g.drawString(this.font, "Категория зарезервирована для будущих модулей.", sx + 16, t + 99, MUTED, false);
         }
 
-        g.drawString(this.font, "KOTCODE  •  1.0.6", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "KOTCODE  •  1.0.12", l + 18, t + h - 55, MUTED, false);
         g.drawString(this.font, "RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ",
             l + 148, t + h - 28, MUTED, false);
 
