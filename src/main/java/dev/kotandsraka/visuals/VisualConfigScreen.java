@@ -478,7 +478,11 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private int pickerY() {
-        return top() + 148;
+        return top() + ("friendList".equals(selectedId) ? 340 : 148);
+    }
+
+    private boolean hasColorPicker() {
+        return "theme".equals(selectedId) || "friendList".equals(selectedId);
     }
 
     private int pickerWidth() {
@@ -499,27 +503,41 @@ public final class VisualConfigScreen extends Screen {
 
     private void updateColorPicker(double mouseX, double mouseY, boolean hue) {
         VisualConfig cfg = VisualConfig.get();
+        boolean friendPicker = "friendList".equals(selectedId);
         if (hue) {
             float amount = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
-            cfg.colorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
+            if (friendPicker) cfg.friendColorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
+            else cfg.colorHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
         } else {
             float saturation = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
             float value = 1.0f - (float) ((mouseY - pickerY()) / Math.max(1.0, pickerHeight()));
-            cfg.colorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
-            cfg.colorValue = Math.max(0.0f, Math.min(1.0f, value));
+            if (friendPicker) {
+                cfg.friendColorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
+                cfg.friendColorValue = Math.max(0.0f, Math.min(1.0f, value));
+            } else {
+                cfg.colorSaturation = Math.max(0.0f, Math.min(1.0f, saturation));
+                cfg.colorValue = Math.max(0.0f, Math.min(1.0f, value));
+            }
         }
     }
 
     private void drawColorPicker(GuiGraphics graphics) {
-        if (!"theme".equals(selectedId)) return;
+        if (!hasColorPicker()) return;
 
         VisualConfig cfg = VisualConfig.get();
+        boolean friendPicker = "friendList".equals(selectedId);
+        float hue = friendPicker ? cfg.friendColorHue : cfg.colorHue;
+        float saturationValue = friendPicker ? cfg.friendColorSaturation : cfg.colorSaturation;
+        float brightnessValue = friendPicker ? cfg.friendColorValue : cfg.colorValue;
+        int color = friendPicker ? VisualConfig.friendAccentColor() : VisualConfig.accentColor();
         int x = pickerX();
         int y = pickerY();
         int width = pickerWidth();
         int height = pickerHeight();
 
-        graphics.drawString(this.font, "ВЫБОР ЦВЕТА", x, y - 18, VisualConfig.accentColor(), true);
+        graphics.drawString(this.font,
+            KotCodeLanguage.text(friendPicker ? "ЦВЕТ ОБВОДКИ ДРУЗЕЙ" : "ВЫБОР ЦВЕТА"),
+            x, y - 18, color, true);
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF080A0F);
 
         int columns = 64;
@@ -532,13 +550,12 @@ public final class VisualConfigScreen extends Screen {
                 int y1 = y + row * height / rows;
                 int y2 = y + (row + 1) * height / rows;
                 float value = 1.0f - (row + 0.5f) / rows;
-                graphics.fill(x1, y1, x2, y2,
-                    VisualConfig.hsvToRgb(cfg.colorHue, saturation, value));
+                graphics.fill(x1, y1, x2, y2, VisualConfig.hsvToRgb(hue, saturation, value));
             }
         }
 
-        int cursorX = x + Math.round(cfg.colorSaturation * width);
-        int cursorY = y + Math.round((1.0f - cfg.colorValue) * height);
+        int cursorX = x + Math.round(saturationValue * width);
+        int cursorY = y + Math.round((1.0f - brightnessValue) * height);
         graphics.fill(cursorX - 4, cursorY - 4, cursorX + 5, cursorY + 5, 0xFF101116);
         graphics.fill(cursorX - 2, cursorY - 2, cursorX + 3, cursorY + 3, 0xFFFFFFFF);
 
@@ -550,12 +567,11 @@ public final class VisualConfigScreen extends Screen {
             graphics.fill(x1, hueY, x2, hueY + 10,
                 VisualConfig.hsvToRgb(i * 360.0f / segments, 1.0f, 1.0f));
         }
-        int hueX = x + Math.round(cfg.colorHue / 360.0f * width);
+        int hueX = x + Math.round(hue / 360.0f * width);
         graphics.fill(hueX - 3, hueY - 2, hueX + 4, hueY + 12, 0xFFFFFFFF);
         graphics.fill(hueX - 1, hueY, hueX + 2, hueY + 10,
-            VisualConfig.hsvToRgb(cfg.colorHue, 1.0f, 1.0f));
+            VisualConfig.hsvToRgb(hue, 1.0f, 1.0f));
 
-        int color = VisualConfig.accentColor();
         String hex = String.format("#%02X%02X%02X", (color >> 16) & 255, (color >> 8) & 255, color & 255);
         String rgb = String.format("RGB  %d, %d, %d", (color >> 16) & 255, (color >> 8) & 255, color & 255);
         int textY = hueY + 18;
@@ -566,7 +582,7 @@ public final class VisualConfigScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        if (GLFW.GLFW_MOUSE_BUTTON_LEFT == click.button() && "theme".equals(selectedId)) {
+        if (GLFW.GLFW_MOUSE_BUTTON_LEFT == click.button() && hasColorPicker()) {
             if (inside(click.x(), click.y(), pickerX(), pickerY(), pickerWidth(), pickerHeight())) {
                 draggingColorSquare = true;
                 updateColorPicker(click.x(), click.y(), false);
