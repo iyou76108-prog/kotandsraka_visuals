@@ -58,9 +58,7 @@ public final class VisualConfig {
     public boolean chinaHat = false;
     public boolean bodyGlow = false;
     public boolean worldParticles = false;
-    public boolean pearlTrail = false;
     public boolean trajectory = false;
-    public boolean arrowTrajectory = false;
     public boolean trailRainbow = false;
 
     // HUD
