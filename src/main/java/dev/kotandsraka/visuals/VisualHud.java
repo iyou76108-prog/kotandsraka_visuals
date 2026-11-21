@@ -144,9 +144,7 @@ public final class VisualHud {
             if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, "БРОНЯ");
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
                 HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "КЛАВИШИ");
-            int statRows = infoHudLineCount(cfg);
-            if (statRows > 0) HudLayoutEditor.drawFrame(graphics, cfg.hudX - 5, cfg.hudY - 5,
-                infoHudWidth(mc, cfg), statRows * 12 + 12, "ИНФО");
+            drawStatFrames(graphics, mc, cfg);
             if (cfg.activeModulesHud && activeModuleCount(cfg) > 0) {
                 HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
                     activeModulesWidth(mc, cfg), activeModulesHeight(cfg), "МОДУЛИ");
@@ -206,45 +204,153 @@ public final class VisualHud {
         g.fill(cx - thickness / 2, cy + gap, cx + (thickness + 1) / 2, cy + length + gap, color);
     }
 
-    private static void renderInfoHud(GuiGraphics g, Minecraft mc, VisualConfig cfg) {
-        List<String> lines = new ArrayList<>();
-        if (cfg.fpsHud) lines.add("КАДРЫ  " + mc.getFps());
-        if (cfg.cpsHud) lines.add("КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size());
-        if (cfg.pingHud) {
-            int ping = 0;
-            if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
-                ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
-            }
-            lines.add("ПИНГ  " + ping + " мс");
-        }
-        if (cfg.coordsHud) lines.add(String.format("XYZ  %d  %d  %d", mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()));
-        if (cfg.speedHud) lines.add(String.format("СКОРОСТЬ  %.2f бл/с", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
-        if (cfg.totemHud) lines.add("ТОТЕМЫ  " + countTotems(mc));
-        if (cfg.clockHud) lines.add("ВРЕМЯ  " + worldClock(mc));
-        if (cfg.compassHud) {
-            Direction direction = mc.player.getDirection();
-            lines.add("НАПРАВЛЕНИЕ  " + direction.getName().toUpperCase());
-        }
-        if (lines.isEmpty()) return;
+    public static final int STAT_FPS = 0;
+    public static final int STAT_CPS = 1;
+    public static final int STAT_PING = 2;
+    public static final int STAT_COORDS = 3;
+    public static final int STAT_SPEED = 4;
+    public static final int STAT_TOTEMS = 5;
+    public static final int STAT_CLOCK = 6;
+    public static final int STAT_DIRECTION = 7;
 
-        int x = cfg.hudX;
-        int y = cfg.hudY;
-        int width = infoHudWidth(mc, cfg) - 19;
-        int alpha = Math.max(48, Math.min(230, (int) (cfg.hudOpacity * 255)));
-        int background = (alpha << 24) | (VisualConfig.panelColor() & 0x00FFFFFF);
-        g.fill(x - 5, y - 5, x + width + 14, y + lines.size() * 12 + 2, background);
-        g.fill(x - 5, y - 5, x - 2, y + lines.size() * 12 + 2, VisualConfig.accentColor());
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int split = line.indexOf("  ");
+    private static final int[] STAT_IDS = {
+        STAT_FPS, STAT_CPS, STAT_PING, STAT_COORDS,
+        STAT_SPEED, STAT_TOTEMS, STAT_CLOCK, STAT_DIRECTION
+    };
+
+    private static void renderInfoHud(GuiGraphics graphics, Minecraft mc, VisualConfig cfg) {
+        for (int id : STAT_IDS) {
+            if (!isStatEnabled(cfg, id)) continue;
+            String text = statText(mc, cfg, id);
+            if (text == null) continue;
+
+            int x = statX(cfg, id);
+            int y = statY(cfg, id);
+            int width = statWidth(mc, cfg, id);
+            graphics.fill(x, y, x + width, y + 20, VisualConfig.panelColor());
+            graphics.fill(x, y, x + 2, y + 20, VisualConfig.accentColor());
+            graphics.fill(x + 2, y, x + width, y + 2, VisualConfig.accentColor());
+            int split = text.indexOf("  ");
             if (split > 0) {
-                g.drawString(mc.font, line.substring(0, split), x, y + i * 12, VisualConfig.mutedColor(), false);
-                g.drawString(mc.font, line.substring(split + 2), x + mc.font.width(line.substring(0, split)) + 7,
-                    y + i * 12, 0xFFFFFFFF, false);
+                graphics.drawString(mc.font, text.substring(0, split), x + 7, y + 6,
+                    VisualConfig.mutedColor(), false);
+                graphics.drawString(mc.font, text.substring(split + 2),
+                    x + 7 + mc.font.width(text.substring(0, split)) + 6, y + 6,
+                    0xFFFFFFFF, false);
             } else {
-                g.drawString(mc.font, line, x, y + i * 12, 0xFFFFFFFF, false);
+                graphics.drawString(mc.font, text, x + 7, y + 6, 0xFFFFFFFF, false);
             }
         }
+    }
+
+    private static void drawStatFrames(GuiGraphics graphics, Minecraft mc, VisualConfig cfg) {
+        for (int id : STAT_IDS) {
+            if (!isStatEnabled(cfg, id)) continue;
+            HudLayoutEditor.drawFrame(graphics, statX(cfg, id), statY(cfg, id),
+                statWidth(mc, cfg, id), 20, statFrameLabel(id));
+        }
+    }
+
+    private static String statFrameLabel(int id) {
+        return switch (id) {
+            case STAT_FPS -> "КАДРЫ";
+            case STAT_CPS -> "КЛИКИ";
+            case STAT_PING -> "ПИНГ";
+            case STAT_COORDS -> "XYZ";
+            case STAT_SPEED -> "СКОРОСТЬ";
+            case STAT_TOTEMS -> "ТОТЕМЫ";
+            case STAT_CLOCK -> "ВРЕМЯ";
+            case STAT_DIRECTION -> "НАПРАВЛЕНИЕ";
+            default -> "HUD";
+        };
+    }
+
+    public static boolean isStatEnabled(VisualConfig cfg, int id) {
+        return switch (id) {
+            case STAT_FPS -> cfg.fpsHud;
+            case STAT_CPS -> cfg.cpsHud;
+            case STAT_PING -> cfg.pingHud;
+            case STAT_COORDS -> cfg.coordsHud;
+            case STAT_SPEED -> cfg.speedHud;
+            case STAT_TOTEMS -> cfg.totemHud;
+            case STAT_CLOCK -> cfg.clockHud;
+            case STAT_DIRECTION -> cfg.compassHud;
+            default -> false;
+        };
+    }
+
+    public static int statX(VisualConfig cfg, int id) {
+        return switch (id) {
+            case STAT_FPS -> cfg.fpsHudX;
+            case STAT_CPS -> cfg.cpsHudX;
+            case STAT_PING -> cfg.pingHudX;
+            case STAT_COORDS -> cfg.coordsHudX;
+            case STAT_SPEED -> cfg.speedHudX;
+            case STAT_TOTEMS -> cfg.totemHudX;
+            case STAT_CLOCK -> cfg.clockHudX;
+            case STAT_DIRECTION -> cfg.compassHudX;
+            default -> 0;
+        };
+    }
+
+    public static int statY(VisualConfig cfg, int id) {
+        return switch (id) {
+            case STAT_FPS -> cfg.fpsHudY;
+            case STAT_CPS -> cfg.cpsHudY;
+            case STAT_PING -> cfg.pingHudY;
+            case STAT_COORDS -> cfg.coordsHudY;
+            case STAT_SPEED -> cfg.speedHudY;
+            case STAT_TOTEMS -> cfg.totemHudY;
+            case STAT_CLOCK -> cfg.clockHudY;
+            case STAT_DIRECTION -> cfg.compassHudY;
+            default -> 0;
+        };
+    }
+
+    public static void setStatPosition(VisualConfig cfg, int id, int x, int y) {
+        switch (id) {
+            case STAT_FPS -> { cfg.fpsHudX = x; cfg.fpsHudY = y; }
+            case STAT_CPS -> { cfg.cpsHudX = x; cfg.cpsHudY = y; }
+            case STAT_PING -> { cfg.pingHudX = x; cfg.pingHudY = y; }
+            case STAT_COORDS -> { cfg.coordsHudX = x; cfg.coordsHudY = y; }
+            case STAT_SPEED -> { cfg.speedHudX = x; cfg.speedHudY = y; }
+            case STAT_TOTEMS -> { cfg.totemHudX = x; cfg.totemHudY = y; }
+            case STAT_CLOCK -> { cfg.clockHudX = x; cfg.clockHudY = y; }
+            case STAT_DIRECTION -> { cfg.compassHudX = x; cfg.compassHudY = y; }
+            default -> { }
+        }
+    }
+
+    public static String statText(Minecraft mc, VisualConfig cfg, int id) {
+        if (mc.player == null) return "";
+        return switch (id) {
+            case STAT_FPS -> "КАДРЫ  " + mc.getFps();
+            case STAT_CPS -> "КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size();
+            case STAT_PING -> {
+                int ping = 0;
+                if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
+                    ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
+                }
+                yield "ПИНГ  " + ping + " мс";
+            }
+            case STAT_COORDS -> String.format("XYZ  %d  %d  %d",
+                mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ());
+            case STAT_SPEED -> String.format("СКОРОСТЬ  %.2f бл/с",
+                mc.player.getDeltaMovement().horizontalDistance() * 20.0);
+            case STAT_TOTEMS -> "ТОТЕМЫ  " + countTotems(mc);
+            case STAT_CLOCK -> "ВРЕМЯ  " + worldClock(mc);
+            case STAT_DIRECTION -> "НАПРАВЛЕНИЕ  " + mc.player.getDirection().getName().toUpperCase();
+            default -> "";
+        };
+    }
+
+    public static int statWidth(Minecraft mc, VisualConfig cfg, int id) {
+        String text = statText(mc, cfg, id);
+        return Math.max(48, mc.font.width(text) + 14);
+    }
+
+    public static int statHeight() {
+        return 20;
     }
 
     private static int countTotems(Minecraft mc) {
@@ -281,19 +387,6 @@ public final class VisualHud {
         for (int i = 0; i < modules.size(); i++) {
             g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, 0xFFEAF5FF, false);
         }
-    }
-
-    public static int infoHudLineCount(VisualConfig c) {
-        int count = 0;
-        if (c.fpsHud) count++;
-        if (c.cpsHud) count++;
-        if (c.pingHud) count++;
-        if (c.coordsHud) count++;
-        if (c.speedHud) count++;
-        if (c.totemHud) count++;
-        if (c.clockHud) count++;
-        if (c.compassHud) count++;
-        return count;
     }
 
     public static int activeModuleCount(VisualConfig c) {
@@ -335,32 +428,6 @@ public final class VisualHud {
 
     public static int activeModulesHeight(VisualConfig cfg) {
         return activeModules(cfg).size() * 12 + 20;
-    }
-
-    public static int infoHudWidth(Minecraft mc, VisualConfig cfg) {
-        List<String> lines = infoHudLines(mc, cfg);
-        int width = 0;
-        for (String line : lines) width = Math.max(width, mc.font.width(line));
-        return width + 19;
-    }
-
-    private static List<String> infoHudLines(Minecraft mc, VisualConfig cfg) {
-        List<String> lines = new ArrayList<>();
-        if (cfg.fpsHud) lines.add("КАДРЫ  " + mc.getFps());
-        if (cfg.cpsHud) lines.add("КЛИКИ  " + LEFT_CLICKS.size() + " / " + RIGHT_CLICKS.size());
-        if (cfg.pingHud) {
-            int ping = 0;
-            if (mc.getConnection() != null && mc.getConnection().getPlayerInfo(mc.player.getUUID()) != null) {
-                ping = mc.getConnection().getPlayerInfo(mc.player.getUUID()).getLatency();
-            }
-            lines.add("ПИНГ  " + ping + " мс");
-        }
-        if (cfg.coordsHud) lines.add(String.format("XYZ  %d  %d  %d", mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()));
-        if (cfg.speedHud) lines.add(String.format("СКОРОСТЬ  %.2f бл/с", mc.player.getDeltaMovement().horizontalDistance() * 20.0));
-        if (cfg.totemHud) lines.add("ТОТЕМЫ  " + countTotems(mc));
-        if (cfg.clockHud) lines.add("ВРЕМЯ  " + worldClock(mc));
-        if (cfg.compassHud) lines.add("НАПРАВЛЕНИЕ  " + mc.player.getDirection().getName().toUpperCase());
-        return lines;
     }
 
     private static List<String> effectLines(Minecraft mc, boolean preview) {
