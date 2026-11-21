@@ -423,6 +423,7 @@ public final class VisualHud {
         if (c.customSwing) list.add(KotCodeLanguage.text("Настройка удара"));
         if (c.customFire) list.add(KotCodeLanguage.text("Огонь от первого лица"));
         if (c.playerGlow) list.add(KotCodeLanguage.text("Обводка силуэта игроков"));
+        if (c.friendGlow) list.add(KotCodeLanguage.text("Обводка друзей"));
         if (c.chestGlow) list.add(KotCodeLanguage.text("Свечение сундуков"));
         if (c.enemyArmorHud) list.add(KotCodeLanguage.text("Броня противников"));
         if (c.fpsHud) list.add(KotCodeLanguage.text("Кадры"));
