@@ -15,8 +15,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class EntityOutlineColorMixin {
     @Inject(method = "getTeamColor", at = @At("HEAD"), cancellable = true)
     private void kotcode$accentPlayerOutline(CallbackInfoReturnable<Integer> cir) {
-        if ((Object) this instanceof Player && VisualConfig.get().playerGlow) {
-            cir.setReturnValue(VisualConfig.accentColor() & 0x00FFFFFF);
+        if ((Object) this instanceof Player player) {
+            VisualConfig config = VisualConfig.get();
+            if (config.friendGlow && VisualConfig.isFriend(player.getName().getString())) {
+                cir.setReturnValue(VisualConfig.friendAccentColor() & 0x00FFFFFF);
+            } else if (config.playerGlow) {
+                cir.setReturnValue(VisualConfig.accentColor() & 0x00FFFFFF);
+            }
         }
     }
 }
