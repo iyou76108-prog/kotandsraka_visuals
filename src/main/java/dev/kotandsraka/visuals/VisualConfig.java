@@ -111,6 +111,24 @@ public final class VisualConfig {
     public int crosshairThickness = 2;
     public int hudX = 8;
     public int hudY = 110;
+
+    // Independent HUD coordinates for every stat module.
+    public int fpsHudX = 8;
+    public int fpsHudY = 110;
+    public int cpsHudX = 170;
+    public int cpsHudY = 110;
+    public int pingHudX = 8;
+    public int pingHudY = 126;
+    public int coordsHudX = 170;
+    public int coordsHudY = 126;
+    public int speedHudX = 8;
+    public int speedHudY = 142;
+    public int totemHudX = 170;
+    public int totemHudY = 142;
+    public int clockHudX = 8;
+    public int clockHudY = 158;
+    public int compassHudX = 170;
+    public int compassHudY = 158;
     public int modulesHudX = -1;
     public int modulesHudY = 8;
     public int effectsHudX = 8;
@@ -221,6 +239,14 @@ public final class VisualConfig {
         cfg.effectsHudY = 185;
         cfg.hudX = 8;
         cfg.hudY = 110;
+        cfg.fpsHudX = 8; cfg.fpsHudY = 110;
+        cfg.cpsHudX = 170; cfg.cpsHudY = 110;
+        cfg.pingHudX = 8; cfg.pingHudY = 126;
+        cfg.coordsHudX = 170; cfg.coordsHudY = 126;
+        cfg.speedHudX = 8; cfg.speedHudY = 142;
+        cfg.totemHudX = 170; cfg.totemHudY = 142;
+        cfg.clockHudX = 8; cfg.clockHudY = 158;
+        cfg.compassHudX = 170; cfg.compassHudY = 158;
         save();
     }
 
