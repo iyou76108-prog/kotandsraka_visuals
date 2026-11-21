@@ -134,21 +134,51 @@ public final class WorldTrailRenderer {
     }
 
     private static void renderChinaHat(Minecraft mc, VisualConfig c, PoseStack.Pose pose, VertexConsumer line) {
-        double y = mc.player.getY() + mc.player.getBbHeight() + 0.08;
-        double radius = Math.max(0.45, mc.player.getBbWidth() * 0.85);
-        Vec3 previous = null;
-        for (int i = 0; i <= 48; i++) {
-            double angle = Math.PI * 2.0 * i / 48.0;
-            Vec3 point = new Vec3(mc.player.getX() + Math.cos(angle) * radius,
-                y, mc.player.getZ() + Math.sin(angle) * radius);
-            if (previous != null) {
-                int color = c.chromaTheme || c.trailRainbow
-                    ? rainbowColor((i + mc.player.tickCount) * 0.025f, 220)
-                    : VisualConfig.accentColor();
-                drawLine(line, pose, previous, point, color, Math.max(1.5f, c.trailWidth * 0.75f));
-            }
-            previous = point;
+        // A shallow conical Chinese-style hat: pointed crown, woven ribs and a wide brim.
+        double centerX = mc.player.getX();
+        double centerZ = mc.player.getZ();
+        double brimY = mc.player.getY() + mc.player.getBbHeight() + 0.08;
+        double radius = Math.max(0.62, mc.player.getBbWidth() * 1.28);
+        double coneHeight = Math.max(0.30, radius * 0.48);
+        Vec3 crown = new Vec3(centerX, brimY + coneHeight, centerZ);
+        int segments = 64;
+        float lineWidth = Math.max(1.4f, c.trailWidth * 0.62f);
+        boolean rainbow = c.chromaTheme || c.trailRainbow;
+
+        // Main brim outline and the narrow inner seam give the hat a visible rim.
+        drawCircle(line, pose, new Vec3(centerX, brimY, centerZ), radius,
+            segments, rainbow ? rainbowColor(mc.player.tickCount * 0.025f, 235)
+                : VisualConfig.accentColor(), lineWidth + 0.35f);
+        drawCircle(line, pose, new Vec3(centerX, brimY + 0.012, centerZ), radius * 0.91,
+            segments, rainbow ? rainbowColor(mc.player.tickCount * 0.025f + 0.12f, 190)
+                : withAlpha(VisualConfig.accentColor(), 185), Math.max(1.0f, lineWidth * 0.72f));
+
+        // Concentric woven bands follow the slope of the cone.
+        double[] bands = {0.30, 0.58, 0.82};
+        for (int bandIndex = 0; bandIndex < bands.length; bandIndex++) {
+            double fraction = bands[bandIndex];
+            Vec3 bandCenter = new Vec3(centerX, brimY + coneHeight * (1.0 - fraction), centerZ);
+            int bandColor = rainbow
+                ? rainbowColor((mc.player.tickCount * 0.025f) + bandIndex * 0.14f, 205)
+                : withAlpha(VisualConfig.accentColor(), 205 - bandIndex * 18);
+            drawCircle(line, pose, bandCenter, radius * fraction,
+                segments, bandColor, Math.max(1.0f, lineWidth * 0.68f));
         }
+
+        // Radial ribs connect the pointed top to the outer edge, like a woven straw hat.
+        for (int i = 0; i < 24; i++) {
+            double angle = Math.PI * 2.0 * i / 24.0;
+            Vec3 rim = new Vec3(centerX + Math.cos(angle) * radius, brimY,
+                centerZ + Math.sin(angle) * radius);
+            int ribColor = rainbow
+                ? rainbowColor((i / 24.0f) + mc.player.tickCount * 0.025f, 220)
+                : withAlpha(VisualConfig.accentColor(), 215);
+            drawLine(line, pose, crown, rim, ribColor, Math.max(1.0f, lineWidth * 0.72f));
+        }
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
     }
 
     private static void renderTrajectory(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
