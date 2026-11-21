@@ -626,7 +626,7 @@ public final class VisualConfigScreen extends Screen {
     }
 
     private void addSettingToggle(String label, int x, int y, int width, Runnable action) {
-        addRenderableWidget(Button.builder(Component.literal(label), b -> {
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(label)), b -> {
             action.run();
             VisualConfig.save();
             rebuild();
