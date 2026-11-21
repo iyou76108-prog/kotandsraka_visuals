@@ -28,6 +28,9 @@ public final class VisualConfigScreen extends Screen {
     private int moduleRowHeight = 27;
     private boolean draggingColorSquare;
     private boolean draggingHueBar;
+    private EditBox configNameField;
+    private EditBox configCodeField;
+    private String configMessage = "";
 
     private record Feature(String id, String name, String description, boolean enabled, Runnable toggle) {}
 
@@ -38,7 +41,7 @@ public final class VisualConfigScreen extends Screen {
 
     private static final String[] CATEGORIES = {
         "Бой", "Движение", "Мир", "Рендер", "Игрок",
-        "Другое", "Друзья", "Конфиги"
+        "Другое", "Друзья", "Настройки", "Конфиги"
     };
 
     private int panelWidth() {
@@ -51,6 +54,13 @@ public final class VisualConfigScreen extends Screen {
 
     private int left() {
         return (this.width - panelWidth()) / 2;
+    }
+
+    private static int withOpacity(int color, float opacity) {
+        float amount = Math.max(0.0f, Math.min(1.0f, opacity));
+        int alpha = (color >>> 24) & 255;
+        int adjusted = Math.round(alpha * amount);
+        return (color & 0x00FFFFFF) | (adjusted << 24);
     }
 
     private int top() {
@@ -106,6 +116,8 @@ public final class VisualConfigScreen extends Screen {
 
     private void rebuild() {
         clearWidgets();
+        configNameField = null;
+        configCodeField = null;
         VisualConfig cfg = VisualConfig.get();
         int l = left();
         int t = top();
@@ -167,20 +179,6 @@ public final class VisualConfigScreen extends Screen {
         }
 
         buildSettings(cfg, findSelected(features), l, t, h);
-
-        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("СБРОСИТЬ ВСЁ")), b -> {
-            String keepCategory = category;
-            String keepFeature = selectedId;
-            VisualConfig.reset();
-            category = keepCategory;
-            selectedId = keepFeature;
-            List<Feature> resetFeatures = featuresForCategory(VisualConfig.get());
-            if (resetFeatures.stream().noneMatch(feature -> feature.id().equals(selectedId))) {
-                selectedId = resetFeatures.isEmpty() ? "" : resetFeatures.get(0).id();
-            }
-            rememberSelection();
-            rebuild();
-        }).bounds(l + 12, t + h - 34, 112, 24).build());
 
         addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("ГОТОВО")), b -> onClose())
             .bounds(l + panelWidth() - 124, t + h - 34, 110, 24).build());
@@ -249,12 +247,18 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "activeModulesHud", "Активные модули", "Список включённых модулей", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
                 add(list, "comboHud", "Счётчик комбо", "Показывать количество последовательных попаданий", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
-            case "Конфиги" -> {
+            case "Настройки" -> {
                 list.add(new Feature("theme", "Оформление", "Цветовой акцент и внешний вид меню", false, null));
-                list.add(new Feature("hudLayout", "Положение HUD", "Сбросить положение перемещаемых панелей HUD", false, null));
-                list.add(new Feature("resetConfig", "Сброс настроек", "Вернуть настройки всех модулей по умолчанию", false, null));
                 list.add(new Feature("moduleTextColor", "Цвет названий функций",
                     "Отдельный цвет текста названий в Shift и HUD активных модулей", false, null));
+            }
+            case "Конфиги" -> {
+                list.add(new Feature("configManager", "Управление конфигами",
+                    "Сохраняй, загружай, удаляй и переноси свои настройки", false, null));
+                for (String profile : VisualConfig.profileNames()) {
+                    list.add(new Feature("profile:" + profile, profile,
+                        "Сохранённый конфиг: загрузить, удалить или скопировать код", false, null));
+                }
             }
             case "Друзья" -> {
                 add(list, "friendGlow", "Обводка друзей",
@@ -286,6 +290,11 @@ public final class VisualConfigScreen extends Screen {
                 VisualConfig.save();
                 rebuild();
             }).bounds(settingsX() + settingsWidth() - 132, t + 63, 118, 24).build());
+        }
+
+        if (feature.id().startsWith("profile:")) {
+            buildProfileSettings(feature.id().substring("profile:".length()), x, firstY, colWidth);
+            return;
         }
 
         switch (feature.id()) {
@@ -352,18 +361,14 @@ public final class VisualConfigScreen extends Screen {
                     v -> c.crosshairThickness = (int) Math.round(v));
             }
             case "theme" -> {
-                addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 205, colWidth, 0.25, 1.0, 0.01,
+                addSlider("ПРОЗРАЧНОСТЬ SHIFT", x, firstY + 205, colWidth, 0.20, 1.0, 0.01,
+                    c.menuOpacity, v -> c.menuOpacity = (float) v);
+                addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 239, colWidth, 0.25, 1.0, 0.01,
                     c.hudOpacity, v -> c.hudOpacity = (float) v);
                 addSettingToggle("СТЕКЛЯННОЕ МЕНЮ: " + onOff(c.glassMenu),
-                    x, firstY + 239, colWidth, () -> c.glassMenu = !c.glassMenu);
+                    x, firstY + 273, colWidth, () -> c.glassMenu = !c.glassMenu);
             }
-            case "hudLayout" -> {
-                addSetting("СБРОСИТЬ ПОЗИЦИИ HUD", x, firstY, colWidth, VisualConfig::resetHudPositions);
-                addSlider("ПРОЗРАЧНОСТЬ HUD", x, firstY + 34, colWidth, 0.25, 1.0, 0.01,
-                    c.hudOpacity, v -> c.hudOpacity = (float) v);
-            }
-            case "resetConfig" -> addSetting("СБРОСИТЬ НАСТРОЙКИ", x, firstY,
-                colWidth, VisualConfig::reset);
+            case "configManager" -> buildConfigManagerSettings(x, firstY, colWidth);
             case "friendList" -> {
                 int fieldWidth = Math.max(70, colWidth - 66);
                 EditBox nameField = new EditBox(this.font, x, firstY, fieldWidth, 24, Component.empty());
@@ -396,6 +401,83 @@ public final class VisualConfigScreen extends Screen {
                 // Features without numeric options keep their controls simple and safe.
             }
         }
+    }
+
+    private void buildConfigManagerSettings(int x, int y, int width) {
+        EditBox nameField = new EditBox(this.font, x, y + 17, width, 22, Component.empty());
+        nameField.setMaxLength(32);
+        configNameField = nameField;
+        addRenderableWidget(nameField);
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("СОХРАНИТЬ ТЕКУЩИЙ КОНФИГ")), b -> {
+            String name = nameField.getValue().trim();
+            if (VisualConfig.saveProfile(name)) {
+                selectedProfile = name;
+                selectedId = "profile:" + name;
+                configMessage = "Конфиг сохранён.";
+                rememberSelection();
+                rebuild();
+            } else {
+                configMessage = "Не удалось сохранить. Проверь имя конфига.";
+            }
+        }).bounds(x, y + 43, width, 24).build());
+
+        EditBox codeField = new EditBox(this.font, x, y + 100, width, 22, Component.empty());
+        codeField.setMaxLength(32767);
+        configCodeField = codeField;
+        addRenderableWidget(codeField);
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("ВСТАВИТЬ ИЗ БУФЕРА")), b -> {
+            long handle = Minecraft.getInstance().getWindow().handle();
+            String clipboard = GLFW.glfwGetClipboardString(handle);
+            if (clipboard != null) codeField.setValue(clipboard);
+        }).bounds(x, y + 128, width, 24).build());
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("ИМПОРТИРОВАТЬ КОНФИГ")), b -> {
+            String name = nameField.getValue().trim();
+            if (VisualConfig.importProfile(name, codeField.getValue())) {
+                selectedProfile = name;
+                selectedId = "profile:" + name;
+                configMessage = "Конфиг импортирован.";
+                rememberSelection();
+                rebuild();
+            } else {
+                configMessage = "Не удалось импортировать. Проверь имя и код.";
+            }
+        }).bounds(x, y + 157, width, 24).build());
+    }
+
+    private void buildProfileSettings(String profileName, int x, int y, int width) {
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("ЗАГРУЗИТЬ КОНФИГ")), b -> {
+            if (VisualConfig.loadProfile(profileName)) {
+                selectedProfile = profileName;
+                VisualConfig.get().lastMenuCategory = category;
+                VisualConfig.get().lastMenuFeature = selectedId;
+                VisualConfig.save();
+                configMessage = "Конфиг загружен.";
+                rebuild();
+            } else {
+                configMessage = "Не удалось загрузить конфиг.";
+            }
+        }).bounds(x, y, width, 25).build());
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("УДАЛИТЬ КОНФИГ")), b -> {
+            if (VisualConfig.deleteProfile(profileName)) {
+                selectedProfile = "";
+                selectedId = "configManager";
+                configMessage = "Конфиг удалён.";
+                rememberSelection();
+                rebuild();
+            } else {
+                configMessage = "Не удалось удалить конфиг.";
+            }
+        }).bounds(x, y + 34, width, 25).build());
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("СКОПИРОВАТЬ КОД ДЛЯ ПЕРЕНОСА")), b -> {
+            String code = VisualConfig.exportProfile(profileName);
+            if (code != null) {
+                long handle = Minecraft.getInstance().getWindow().handle();
+                GLFW.glfwSetClipboardString(handle, code);
+                configMessage = "Код скопирован в буфер обмена.";
+            } else {
+                configMessage = "Не удалось экспортировать конфиг.";
+            }
+        }).bounds(x, y + 68, width, 25).build());
     }
 
     private void addSlider(String label, int x, int y, int width,
@@ -681,11 +763,12 @@ public final class VisualConfigScreen extends Screen {
         int sx = settingsX();
         int sw = settingsWidth();
 
-        g.fill(0, 0, this.width, this.height, 0xB800050A);
-        g.fill(l, t, l + w, t + h, BG);
-        g.fill(l, t, l + 130, t + h, SIDEBAR);
-        g.fill(l + 136, t + 52, l + 136 + modulesWidth() + 2, t + h - 43, MODULES_BG);
-        g.fill(sx, t + 52, sx + sw, t + h - 43, SETTINGS_BG);
+        float menuOpacity = VisualConfig.get().menuOpacity;
+        g.fill(0, 0, this.width, this.height, 0x7600050A);
+        g.fill(l, t, l + w, t + h, withOpacity(BG, menuOpacity));
+        g.fill(l, t, l + 130, t + h, withOpacity(SIDEBAR, menuOpacity));
+        g.fill(l + 136, t + 52, l + 136 + modulesWidth() + 2, t + h - 43, withOpacity(MODULES_BG, menuOpacity));
+        g.fill(sx, t + 52, sx + sw, t + h - 43, withOpacity(SETTINGS_BG, menuOpacity));
 
         g.fill(l, t, l + w, t + 3, VisualConfig.accentColor());
         g.fill(l, t, l + 3, t + h, VisualConfig.accentColor());
@@ -743,12 +826,22 @@ public final class VisualConfigScreen extends Screen {
                 g.drawString(this.font, KotCodeLanguage.text("Прогноз отображается в игровом мире."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("hitRange")) {
                 g.drawString(this.font, KotCodeLanguage.text("Радиус кольца фиксирован: 3 блока."), sx + 12, t + 133, MUTED, false);
-            } else if (selected.id().equals("resetConfig")) {
-                g.drawString(this.font, KotCodeLanguage.text("Вернуть переключатели и параметры по умолчанию."), sx + 12, t + 133, MUTED, false);
+            } else if (selected.id().equals("configManager")) {
+                g.drawString(this.font, KotCodeLanguage.text("ИМЯ НОВОГО КОНФИГА"), sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("КОД ДЛЯ ИМПОРТА / ПЕРЕНОСА"), sx + 12, t + 216, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Вставь полученный код, укажи имя и нажми импорт."),
+                    sx + 12, t + 318, MUTED, false);
+            } else if (selected.id().startsWith("profile:")) {
+                g.drawString(this.font, KotCodeLanguage.text("Загрузи этот профиль или скопируй код, чтобы передать его."),
+                    sx + 12, t + 133, MUTED, false);
             }
         }
+        if (!configMessage.isBlank()) {
+            g.drawString(this.font, KotCodeLanguage.text(configMessage), sx + 12, t + 355,
+                VisualConfig.accentColor(), false);
+        }
 
-        g.drawString(this.font, "KOTCODE  •  1.0.14", l + 18, t + h - 55, MUTED, false);
+        g.drawString(this.font, "KOTCODE  •  1.0.15", l + 18, t + h - 55, MUTED, false);
         g.drawString(this.font, KotCodeLanguage.text("RIGHT SHIFT  •  ВЫБЕРИ МОДУЛЬ  •  ИЗМЕНИ ПАРАМЕТРЫ"),
             l + 148, t + h - 28, MUTED, false);
 
