@@ -20,6 +20,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        KotCodeSounds.register();
         VisualConfig.load();
         WorldTrailRenderer.register();
         XrayRenderer.register();

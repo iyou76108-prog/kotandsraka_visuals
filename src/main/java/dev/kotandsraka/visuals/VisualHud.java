@@ -74,7 +74,7 @@ public final class VisualHud {
                 isCritical ? 1.22f : 1.02f);
             case 2 -> mc.player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, volume,
                 isCritical ? 1.48f : 1.25f);
-            case 3 -> mc.player.playSound(SoundEvents.CAT_PURREOW, volume * 0.85f,
+            case 3 -> mc.player.playSound(KotCodeSounds.HIT_UWU, volume * 0.85f,
                 isCritical ? 1.18f : 1.02f);
             case 4 -> {
                 mc.player.playSound(SoundEvents.NOTE_BLOCK_BASEDRUM.value(), volume * 0.85f, 0.76f);

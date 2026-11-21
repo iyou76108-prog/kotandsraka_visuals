@@ -1,0 +1,11 @@
+{
+  "hit_uwu_custom": {
+    "subtitle": "subtitles.kotandsraka_visuals.hit_uwu_custom",
+    "sounds": [
+      {
+        "name": "kotandsraka_visuals:hit_uwu_custom",
+        "stream": false
+      }
+    ]
+  }
+}
