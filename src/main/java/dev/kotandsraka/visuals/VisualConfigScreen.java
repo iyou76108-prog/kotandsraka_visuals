@@ -193,14 +193,10 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "hitParticles", "Частицы при ударе", "Вспышка частиц при попадании по цели", c.hitParticles, () -> c.hitParticles = !c.hitParticles);
                 add(list, "criticalParticles", "Частицы крит. удара", "Дополнительные частицы при критическом ударе", c.criticalParticles, () -> c.criticalParticles = !c.criticalParticles);
                 add(list, "hitSound", "Звук попадания", "Воспроизводить звук при попадании по существу", c.hitSound, () -> c.hitSound = !c.hitSound);
-                add(list, "hitFlash", "Вспышка при ударе", "Краткая вспышка экрана после попадания", c.hitFlash, () -> c.hitFlash = !c.hitFlash);
                 add(list, "hitText", "Метка попадания", "Показывать надпись ПОПАДАНИЕ / КРИТ", c.hitText, () -> c.hitText = !c.hitText);
                 add(list, "damageNumbers", "Числа урона", "Показывать нанесённый цели урон", c.damageNumbers, () -> c.damageNumbers = !c.damageNumbers);
                 add(list, "killEffect", "Эффект убийства", "Всплеск частиц при смерти цели", c.killEffect, () -> c.killEffect = !c.killEffect);
                 add(list, "targetRing", "Кольцо цели", "Кольцевой эффект на атакованной цели", c.targetRing, () -> c.targetRing = !c.targetRing);
-                add(list, "targetEsp", "Обводка цели", "Кольцо вокруг последней атакованной цели", c.targetEsp, () -> c.targetEsp = !c.targetEsp);
-                add(list, "hitRange", "Дальность удара", "Показывать круг радиусом 3 блока", c.hitRange, () -> c.hitRange = !c.hitRange);
-                add(list, "comboHud", "Счётчик комбо", "Считать последовательные попадания", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
             case "Движение" -> {
                 add(list, "autoSprint", "Авто-бег", "Автоматически включать бег при движении вперёд", c.autoSprint, () -> c.autoSprint = !c.autoSprint);
