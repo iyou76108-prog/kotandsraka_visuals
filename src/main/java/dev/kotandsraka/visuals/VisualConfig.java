@@ -56,7 +56,6 @@ public final class VisualConfig {
     public boolean jumpRings = false;
     public boolean skullJump = false;
     public boolean chinaHat = false;
-    public boolean bodyGlow = false;
     public boolean worldParticles = false;
     public boolean trajectory = false;
     public boolean trailRainbow = false;
@@ -115,6 +114,11 @@ public final class VisualConfig {
     public float particleSpeed = 0.12f;
     public float particleHeight = 0.35f;
     public int particleLifetimeMs = 450;
+    public int worldParticleMode = 0;
+    public int worldParticleDensity = 4;
+    public float worldParticleRadius = 6.0f;
+    public int hitSoundStyle = 0;
+    public float hitSoundVolume = 0.70f;
     public int armorHudX = 8;
     public int armorHudY = 58;
     public int targetHudX = 8;

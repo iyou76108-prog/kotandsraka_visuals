@@ -57,9 +57,33 @@ public final class VisualHud {
         Minecraft mc = Minecraft.getInstance();
         critical = mc.player != null && mc.player.fallDistance > 0.0F && !mc.player.onGround();
         if (cfg.targetRing) VisualEffects.targetRing(living);
-        if (cfg.hitSound && mc.player != null) {
-            float pitch = critical ? 1.05f : 0.92f;
-            mc.player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, 0.55f, pitch);
+        if (cfg.hitSound && mc.player != null) playHitSound(mc, cfg, critical);
+    }
+
+    public static void previewHitSound() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) playHitSound(mc, VisualConfig.get(), false);
+    }
+
+    private static void playHitSound(Minecraft mc, VisualConfig cfg, boolean isCritical) {
+        if (mc.player == null) return;
+        float volume = Math.max(0.05f, Math.min(1.0f, cfg.hitSoundVolume));
+        float normalPitch = isCritical ? 1.08f : 0.94f;
+        switch (Math.floorMod(cfg.hitSoundStyle, 5)) {
+            case 1 -> mc.player.playSound(SoundEvents.AMETHYST_BLOCK_CHIME, volume,
+                isCritical ? 1.22f : 1.02f);
+            case 2 -> mc.player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, volume,
+                isCritical ? 1.48f : 1.25f);
+            case 3 -> mc.player.playSound(SoundEvents.CAT_PURREOW, volume * 0.85f,
+                isCritical ? 1.18f : 1.02f);
+            case 4 -> {
+                mc.player.playSound(SoundEvents.NOTE_BLOCK_BASEDRUM.value(), volume * 0.85f, 0.76f);
+                mc.player.playSound(SoundEvents.NOTE_BLOCK_BASS.value(), volume * 0.70f,
+                    isCritical ? 0.62f : 0.70f);
+                mc.player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), volume * 0.42f,
+                    isCritical ? 1.28f : 1.42f);
+            }
+            default -> mc.player.playSound(SoundEvents.PLAYER_ATTACK_STRONG, volume, normalPitch);
         }
     }
 

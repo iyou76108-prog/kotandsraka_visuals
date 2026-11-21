@@ -42,7 +42,6 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             try {
                 VisualHud.tick();
                 WorldTrailRenderer.tick();
-                VisualEffects.playerCosmetics();
                 VisualEffects.worldAmbience();
             } catch (Throwable visualError) {
                 // Visuals must never be able to kick the client out of a world.

@@ -198,7 +198,7 @@ public final class VisualConfigScreen extends Screen {
             case "Бой" -> {
                 add(list, "hitParticles", "Частицы при ударе", "Вспышка частиц при попадании по цели", c.hitParticles, () -> c.hitParticles = !c.hitParticles);
                 add(list, "criticalParticles", "Частицы крит. удара", "Дополнительные частицы при критическом ударе", c.criticalParticles, () -> c.criticalParticles = !c.criticalParticles);
-                add(list, "hitSound", "Звук попадания", "Воспроизводить звук при попадании по существу", c.hitSound, () -> c.hitSound = !c.hitSound);
+                add(list, "hitSound", "Звук попадания", "Выбор звука попадания, включая UWU и phonk-микс", c.hitSound, () -> c.hitSound = !c.hitSound);
                 add(list, "hitText", "Метка попадания", "Показывать надпись ПОПАДАНИЕ / КРИТ", c.hitText, () -> c.hitText = !c.hitText);
                 add(list, "damageNumbers", "Числа урона", "Показывать нанесённый цели урон", c.damageNumbers, () -> c.damageNumbers = !c.damageNumbers);
                 add(list, "killEffect", "Эффект убийства", "Всплеск частиц при смерти цели", c.killEffect, () -> c.killEffect = !c.killEffect);
@@ -211,12 +211,11 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "skullJump", "Череп при прыжке", "Показывать череп рядом с прицелом при прыжке", c.skullJump, () -> c.skullJump = !c.skullJump);
             }
             case "Мир" -> {
-                add(list, "worldParticles", "Частицы мира", "Окружающие частицы вокруг игрока", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
+                add(list, "worldParticles", "Частицы мира", "Звёзды, снег, радужные или смешанные частицы вокруг игрока", c.worldParticles, () -> c.worldParticles = !c.worldParticles);
                 add(list, "trajectory", "Траектория",
                     "Путь жемчугов, стрел, вихревых зарядов и трезубцев с отметкой блока столкновения",
                     c.trajectory, () -> c.trajectory = !c.trajectory);
                 add(list, "chinaHat", "Шляпа", "Кольцо над головой в режиме от третьего лица", c.chinaHat, () -> c.chinaHat = !c.chinaHat);
-                add(list, "bodyGlow", "Свечение тела", "Декоративные частицы вращаются вокруг вас", c.bodyGlow, () -> c.bodyGlow = !c.bodyGlow);
                 add(list, "trailRainbow", "Радужный след", "Плавно менять цвета следа", c.trailRainbow, () -> c.trailRainbow = !c.trailRainbow);
             }
             case "Рендер" -> {
@@ -299,6 +298,21 @@ public final class VisualConfigScreen extends Screen {
         }
 
         switch (feature.id()) {
+            case "worldParticles" -> {
+                addSetting("ТИП ЧАСТИЦ: " + worldParticleModeName(c.worldParticleMode), x, firstY, colWidth,
+                    () -> c.worldParticleMode = (Math.floorMod(c.worldParticleMode, 4) + 1) % 4);
+                addSlider("ПЛОТНОСТЬ", x, firstY + 34, colWidth, 1, 8, 1, c.worldParticleDensity,
+                    v -> c.worldParticleDensity = (int) Math.round(v));
+                addSlider("РАДИУС", x, firstY + 68, colWidth, 3, 12, 1, c.worldParticleRadius,
+                    v -> c.worldParticleRadius = (float) v);
+            }
+            case "hitSound" -> {
+                addSetting("ЗВУК: " + hitSoundStyleName(c.hitSoundStyle), x, firstY, colWidth,
+                    () -> c.hitSoundStyle = (Math.floorMod(c.hitSoundStyle, 5) + 1) % 5);
+                addSlider("ГРОМКОСТЬ", x, firstY + 34, colWidth, 0.10, 1.0, 0.05, c.hitSoundVolume,
+                    v -> c.hitSoundVolume = (float) v);
+                addSetting("ПРОСЛУШАТЬ ЗВУК", x, firstY + 68, colWidth, VisualHud::previewHitSound);
+            }
             case "hitParticles", "criticalParticles" -> {
                 addSlider("КОЛИЧЕСТВО ЧАСТИЦ", x, firstY, colWidth, 2, 24, 2, c.particleCount,
                     v -> c.particleCount = (int) Math.round(v));
@@ -752,6 +766,25 @@ public final class VisualConfigScreen extends Screen {
             case 1 -> KotCodeLanguage.text("КОЛЬЦО");
             case 2 -> KotCodeLanguage.text("ВВЕРХ");
             default -> KotCodeLanguage.text("ВСПЫШКА");
+        };
+    }
+
+    private static String worldParticleModeName(int mode) {
+        return switch (Math.floorMod(mode, 4)) {
+            case 1 -> KotCodeLanguage.text("СНЕГ");
+            case 2 -> KotCodeLanguage.text("РАДУГА");
+            case 3 -> KotCodeLanguage.text("СМЕШАННЫЕ");
+            default -> KotCodeLanguage.text("ЗВЁЗДЫ");
+        };
+    }
+
+    private static String hitSoundStyleName(int style) {
+        return switch (Math.floorMod(style, 5)) {
+            case 1 -> KotCodeLanguage.text("АМЕТИСТ");
+            case 2 -> KotCodeLanguage.text("ОРБА ОПЫТА");
+            case 3 -> "UWU";
+            case 4 -> "UWU PHONK";
+            default -> KotCodeLanguage.text("ОБЫЧНЫЙ УДАР");
         };
     }
 
