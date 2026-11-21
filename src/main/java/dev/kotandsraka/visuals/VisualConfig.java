@@ -82,6 +82,11 @@ public final class VisualConfig {
     public float friendColorValue = 0.95f;
     public boolean chestGlow = false;
 
+    // Independent HSV color used for function names in the Shift list and Active Modules HUD.
+    public Float moduleTextHue = 0.0f;
+    public Float moduleTextSaturation = 0.0f;
+    public Float moduleTextValue = 1.0f;
+
     // Movement
     public boolean autoSprint = false;
 
@@ -193,6 +198,14 @@ public final class VisualConfig {
         return hsvToRgb(cfg.friendColorHue, cfg.friendColorSaturation, cfg.friendColorValue);
     }
 
+    public static int moduleTextColor() {
+        VisualConfig cfg = get();
+        float hue = cfg.moduleTextHue == null ? 0.0f : cfg.moduleTextHue;
+        float saturation = cfg.moduleTextSaturation == null ? 0.0f : cfg.moduleTextSaturation;
+        float value = cfg.moduleTextValue == null ? 1.0f : cfg.moduleTextValue;
+        return hsvToRgb(hue, saturation, value);
+    }
+
     public static boolean isFriend(String name) {
         if (name == null || name.isBlank()) return false;
         List<String> names = get().friends;
@@ -238,6 +251,9 @@ public final class VisualConfig {
             INSTANCE.language = "ru";
         }
         if (INSTANCE.friends == null) INSTANCE.friends = new ArrayList<>();
+        if (INSTANCE.moduleTextHue == null) INSTANCE.moduleTextHue = 0.0f;
+        if (INSTANCE.moduleTextSaturation == null) INSTANCE.moduleTextSaturation = 0.0f;
+        if (INSTANCE.moduleTextValue == null) INSTANCE.moduleTextValue = 1.0f;
         save();
     }
 
