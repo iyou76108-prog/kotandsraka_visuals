@@ -82,7 +82,9 @@ public final class XrayRenderer {
             return;
         }
 
-        boolean enabled = VisualConfig.get().playerGlow;
+        VisualConfig cfg = VisualConfig.get();
+        boolean outlinePlayers = cfg.playerGlow;
+        boolean outlineFriends = cfg.friendGlow;
         Set<UUID> seen = new HashSet<>();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
@@ -90,7 +92,8 @@ public final class XrayRenderer {
 
             UUID id = player.getUUID();
             seen.add(id);
-            boolean shouldGlow = enabled && player.isAlive()
+            boolean friend = outlineFriends && VisualConfig.isFriend(player.getName().getString());
+            boolean shouldGlow = (outlinePlayers || friend) && player.isAlive()
                 && player.distanceToSqr(mc.player) <= 64.0 * 64.0;
 
             if (shouldGlow) {
