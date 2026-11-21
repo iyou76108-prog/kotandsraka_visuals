@@ -416,16 +416,16 @@ public final class VisualHud {
         int panelHeight = activeModulesBaseHeight(modules.size());
         int textColor = VisualConfig.moduleTextColor();
 
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0.0f);
-        g.pose().scale(scale, scale, 1.0f);
+        g.pose().pushMatrix();
+        g.pose().translate((float) x, (float) y);
+        g.pose().scale(scale, scale);
         g.fill(0, 0, panelWidth, panelHeight, VisualConfig.panelColor());
         g.fill(0, 0, panelWidth, 2, VisualConfig.accentColor());
         g.drawString(mc.font, "KOTCODE", 6, 6, textColor, false);
         for (int i = 0; i < modules.size(); i++) {
             g.drawString(mc.font, modules.get(i), 6, 19 + i * 11, textColor, false);
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     public static int activeModuleCount(VisualConfig c) {
