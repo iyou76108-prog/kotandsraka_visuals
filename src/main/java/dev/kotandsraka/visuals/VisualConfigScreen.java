@@ -813,19 +813,6 @@ public final class VisualConfigScreen extends Screen {
                     g.drawString(this.font, KotCodeLanguage.text("Показаны первые 6 друзей. Удаляйте их нажатием на ник."),
                         sx + 12, t + 308, MUTED, false);
                 }
-            } else if (selected.toggle() == null) {
-                g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
-            } else if (selected.id().equals("moduleTextColor")) {
-                g.drawString(this.font, KotCodeLanguage.text("ПРИМЕР НАЗВАНИЙ ФУНКЦИЙ"),
-                    sx + 12, t + 133, MUTED, false);
-                g.drawString(this.font, KotCodeLanguage.text("Шляпа  •  Авто-бег  •  След игрока"),
-                    sx + 12, t + 151, VisualConfig.moduleTextColor(), true);
-            } else if (selected.id().equals("targetEsp")) {
-                g.drawString(this.font, KotCodeLanguage.text("Рисует кольцо вокруг последней атакованной цели."), sx + 12, t + 133, MUTED, false);
-            } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
-                g.drawString(this.font, KotCodeLanguage.text("Прогноз отображается в игровом мире."), sx + 12, t + 133, MUTED, false);
-            } else if (selected.id().equals("hitRange")) {
-                g.drawString(this.font, KotCodeLanguage.text("Радиус кольца фиксирован: 3 блока."), sx + 12, t + 133, MUTED, false);
             } else if (selected.id().equals("configManager")) {
                 g.drawString(this.font, KotCodeLanguage.text("ИМЯ НОВОГО КОНФИГА"), sx + 12, t + 133, MUTED, false);
                 g.drawString(this.font, KotCodeLanguage.text("КОД ДЛЯ ИМПОРТА / ПЕРЕНОСА"), sx + 12, t + 216, MUTED, false);
@@ -834,6 +821,19 @@ public final class VisualConfigScreen extends Screen {
             } else if (selected.id().startsWith("profile:")) {
                 g.drawString(this.font, KotCodeLanguage.text("Загрузи этот профиль или скопируй код, чтобы передать его."),
                     sx + 12, t + 133, MUTED, false);
+            } else if (selected.id().equals("moduleTextColor")) {
+                g.drawString(this.font, KotCodeLanguage.text("ПРИМЕР НАЗВАНИЙ ФУНКЦИЙ"),
+                    sx + 12, t + 133, MUTED, false);
+                g.drawString(this.font, KotCodeLanguage.text("Шляпа  •  Авто-бег  •  След игрока"),
+                    sx + 12, t + 151, VisualConfig.moduleTextColor(), true);
+            } else if (selected.toggle() == null) {
+                g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
+            } else if (selected.id().equals("targetEsp")) {
+                g.drawString(this.font, KotCodeLanguage.text("Рисует кольцо вокруг последней атакованной цели."), sx + 12, t + 133, MUTED, false);
+            } else if (selected.id().equals("trajectory") || selected.id().equals("arrowTrajectory")) {
+                g.drawString(this.font, KotCodeLanguage.text("Прогноз отображается в игровом мире."), sx + 12, t + 133, MUTED, false);
+            } else if (selected.id().equals("hitRange")) {
+                g.drawString(this.font, KotCodeLanguage.text("Радиус кольца фиксирован: 3 блока."), sx + 12, t + 133, MUTED, false);
             }
         }
         if (!configMessage.isBlank()) {
