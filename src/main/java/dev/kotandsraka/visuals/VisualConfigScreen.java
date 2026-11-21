@@ -30,6 +30,7 @@ public final class VisualConfigScreen extends Screen {
     private boolean draggingHueBar;
     private EditBox configNameField;
     private EditBox configCodeField;
+    private String selectedProfile = "";
     private String configMessage = "";
 
     private record Feature(String id, String name, String description, boolean enabled, Runnable toggle) {}
