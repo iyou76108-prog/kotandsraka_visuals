@@ -2,6 +2,7 @@ package dev.kotandsraka.visuals;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.Minecraft;
@@ -37,7 +38,7 @@ public final class VisualConfigScreen extends Screen {
 
     private static final String[] CATEGORIES = {
         "Бой", "Движение", "Мир", "Рендер", "Игрок",
-        "Эксплойты", "Другое", "Друзья", "Конфиги"
+        "Другое", "Друзья", "Конфиги"
     };
 
     private int panelWidth() {
@@ -113,7 +114,7 @@ public final class VisualConfigScreen extends Screen {
         for (int i = 0; i < CATEGORIES.length; i++) {
             String name = CATEGORIES[i];
             int y = t + 65 + i * 29;
-            addRenderableWidget(Button.builder(Component.literal(name), b -> {
+            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(name)), b -> {
                 category = name;
                 List<Feature> next = featuresForCategory(VisualConfig.get());
                 selectedId = next.isEmpty() ? "" : next.get(0).id();
@@ -121,6 +122,12 @@ public final class VisualConfigScreen extends Screen {
                 rebuild();
             }).bounds(l + 10, y, 118, 24).build());
         }
+
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.isEnglish() ? "LANGUAGE: EN" : "ЯЗЫК: RU"), b -> {
+            cfg.language = KotCodeLanguage.isEnglish() ? "ru" : "en";
+            VisualConfig.save();
+            rebuild();
+        }).bounds(l + panelWidth() - 124, t + 14, 110, 24).build());
 
         List<Feature> features = featuresForCategory(cfg);
         if (!features.isEmpty() && features.stream().noneMatch(f -> f.id().equals(selectedId))) {
@@ -138,14 +145,14 @@ public final class VisualConfigScreen extends Screen {
             int rowHeight = Math.max(18, moduleRowHeight - 3);
             final String id = feature.id();
 
-            addRenderableWidget(Button.builder(Component.literal(feature.name()).withStyle(style -> style.withItalic(true)), b -> {
+            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.name())).withStyle(style -> style.withItalic(true)), b -> {
                 selectedId = id;
                 rememberSelection();
                 rebuild();
             }).bounds(modulesX() + 6, y, modulesWidth() - 57, rowHeight).build());
 
             if (feature.toggle() != null) {
-                addRenderableWidget(Button.builder(Component.literal(feature.enabled() ? "ВКЛ" : "ВЫКЛ"), b -> {
+                addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.enabled() ? "ВКЛ" : "ВЫКЛ")), b -> {
                     feature.toggle().run();
                     VisualConfig.save();
                     rebuild();
@@ -161,7 +168,7 @@ public final class VisualConfigScreen extends Screen {
 
         buildSettings(cfg, findSelected(features), l, t, h);
 
-        addRenderableWidget(Button.builder(Component.literal("СБРОСИТЬ ВСЁ"), b -> {
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("СБРОСИТЬ ВСЁ")), b -> {
             String keepCategory = category;
             String keepFeature = selectedId;
             VisualConfig.reset();
@@ -175,7 +182,7 @@ public final class VisualConfigScreen extends Screen {
             rebuild();
         }).bounds(l + 12, t + h - 34, 112, 24).build());
 
-        addRenderableWidget(Button.builder(Component.literal("ГОТОВО"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("ГОТОВО")), b -> onClose())
             .bounds(l + panelWidth() - 124, t + h - 34, 110, 24).build());
     }
 
