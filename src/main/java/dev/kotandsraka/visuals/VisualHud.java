@@ -6,14 +6,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.FormattedCharSequence;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -538,6 +541,7 @@ public final class VisualHud {
         double tanHalfFov = Math.tan(fov * 0.5);
         double aspect = (double) g.guiWidth() / (double) g.guiHeight();
         EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+        String[] slotNames = {"Шлем", "Нагрудник", "Поножи", "Ботинки"};
 
         for (Player player : mc.level.players()) {
             if (player == mc.player || !player.isAlive() || player.isInvisibleTo(mc.player)) continue;
@@ -545,9 +549,20 @@ public final class VisualHud {
 
             ItemStack[] armor = new ItemStack[slots.length];
             boolean hasArmor = false;
+            List<String> enchantRows = new ArrayList<>();
             for (int i = 0; i < slots.length; i++) {
                 armor[i] = player.getItemBySlot(slots[i]);
-                if (!armor[i].isEmpty()) hasArmor = true;
+                if (armor[i].isEmpty()) continue;
+                hasArmor = true;
+
+                List<String> enchantNames = new ArrayList<>();
+                for (var entry : armor[i].getEnchantments().entrySet()) {
+                    // getFullname supplies the translated enchantment name and Roman-numeral level.
+                    enchantNames.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()).getString());
+                }
+                if (!enchantNames.isEmpty()) {
+                    enchantRows.add(slotNames[i] + ": " + String.join(", ", enchantNames));
+                }
             }
             if (!hasArmor) continue;
 
@@ -569,14 +584,28 @@ public final class VisualHud {
 
             int centerX = (int) Math.round((ndcX * 0.5 + 0.5) * g.guiWidth());
             int centerY = (int) Math.round((0.5 - ndcY * 0.5) * g.guiHeight());
-            int x = centerX - 39;
-            int y = centerY - 25;
 
-            g.fill(x, y, x + 78, y + 24, 0xCC090C12);
-            g.fill(x, y, x + 78, y + 1, VisualConfig.accentColor());
+            int panelWidth = 78;
+            for (String row : enchantRows) {
+                panelWidth = Math.max(panelWidth, Math.min(220, mc.font.width(row) + 10));
+            }
+            int textWidth = panelWidth - 10;
+            List<FormattedCharSequence> enchantLines = new ArrayList<>();
+            for (String row : enchantRows) {
+                enchantLines.addAll(mc.font.split(Component.literal(row), textWidth));
+            }
 
+            int panelHeight = 24 + (enchantLines.isEmpty() ? 0 : 3 + enchantLines.size() * 9);
+            int x = centerX - panelWidth / 2;
+            // Keep the complete panel above the player's head, including wrapped enchantment lines.
+            int y = centerY - panelHeight - 2;
+
+            g.fill(x, y, x + panelWidth, y + panelHeight, 0xCC090C12);
+            g.fill(x, y, x + panelWidth, y + 1, VisualConfig.accentColor());
+
+            int iconStartX = x + (panelWidth - 78) / 2;
             for (int i = 0; i < armor.length; i++) {
-                int iconX = x + 3 + i * 18;
+                int iconX = iconStartX + 3 + i * 18;
                 int iconY = y + 3;
                 ItemStack stack = armor[i];
                 g.fill(iconX, iconY, iconX + 16, iconY + 16, 0x66545B69);
@@ -592,6 +621,12 @@ public final class VisualHud {
                         g.fill(iconX, y + 20, iconX + barWidth, y + 22, VisualConfig.accentColor());
                     }
                 }
+            }
+
+            int textY = y + 26;
+            for (FormattedCharSequence line : enchantLines) {
+                g.drawString(mc.font, line, x + 5, textY, 0xFFF0F0F4);
+                textY += 9;
             }
         }
     }
