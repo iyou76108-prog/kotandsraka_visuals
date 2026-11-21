@@ -362,6 +362,34 @@ public final class VisualConfigScreen extends Screen {
             }
             case "resetConfig" -> addSetting("СБРОСИТЬ НАСТРОЙКИ", x, firstY,
                 colWidth, VisualConfig::reset);
+            case "friendList" -> {
+                int fieldWidth = Math.max(70, colWidth - 66);
+                EditBox nameField = new EditBox(this.font, x, firstY, fieldWidth, 24, Component.empty());
+                nameField.setMaxLength(16);
+                addRenderableWidget(nameField);
+                addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text("Добавить")), b -> {
+                    String name = nameField.getValue().trim();
+                    if (name.matches("[A-Za-z0-9_]{1,16}") && c.friends != null
+                        && c.friends.stream().noneMatch(existing -> existing.equalsIgnoreCase(name))) {
+                        c.friends.add(name);
+                        VisualConfig.save();
+                        rebuild();
+                    }
+                }).bounds(x + fieldWidth + 6, firstY, Math.max(58, colWidth - fieldWidth - 6), 24).build());
+
+                if (c.friends != null) {
+                    int visibleFriends = Math.min(6, c.friends.size());
+                    for (int i = 0; i < visibleFriends; i++) {
+                        String friendName = c.friends.get(i);
+                        int rowY = firstY + 31 + i * 24;
+                        addRenderableWidget(Button.builder(Component.literal(friendName + "  ×"), b -> {
+                            c.friends.removeIf(existing -> existing.equalsIgnoreCase(friendName));
+                            VisualConfig.save();
+                            rebuild();
+                        }).bounds(x, rowY, colWidth, 21).build());
+                    }
+                }
+            }
             default -> {
                 // Features without numeric options keep their controls simple and safe.
             }
