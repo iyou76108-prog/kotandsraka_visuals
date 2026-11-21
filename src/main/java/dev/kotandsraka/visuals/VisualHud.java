@@ -411,7 +411,6 @@ public final class VisualHud {
         if (c.hitRange) list.add(KotCodeLanguage.text("Дальность удара"));
         if (c.customCrosshair) list.add(KotCodeLanguage.text("Настраиваемый прицел"));
         if (c.playerTrail) list.add(KotCodeLanguage.text("След игрока"));
-        if (c.pearlTrail) list.add(KotCodeLanguage.text("След жемчуга"));
         if (c.trajectory) list.add(KotCodeLanguage.text("Траектория"));
         if (c.chinaHat) list.add(KotCodeLanguage.text("Шляпа"));
         if (c.bodyGlow) list.add(KotCodeLanguage.text("Свечение тела"));
