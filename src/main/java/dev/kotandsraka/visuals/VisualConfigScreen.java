@@ -254,8 +254,12 @@ public final class VisualConfigScreen extends Screen {
                 list.add(new Feature("hudLayout", "Положение HUD", "Сбросить положение перемещаемых панелей HUD", false, null));
                 list.add(new Feature("resetConfig", "Сброс настроек", "Вернуть настройки всех модулей по умолчанию", false, null));
             }
-            case "Эксплойты", "Друзья" -> {
-                // These categories are shown to mirror the reference layout; no unsupported modules are fabricated.
+            case "Друзья" -> {
+                add(list, "friendGlow", "Обводка друзей",
+                    "Подсвечивать игроков, ники которых добавлены в список друзей",
+                    c.friendGlow, () -> c.friendGlow = !c.friendGlow);
+                list.add(new Feature("friendList", "Список друзей",
+                    "Добавляйте ники игроков и настраивайте отдельный цвет их обводки", false, null));
             }
             default -> {
             }
