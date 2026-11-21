@@ -415,6 +415,14 @@ public final class VisualHud {
         if (c.customFire) list.add("Огонь от первого лица");
         if (c.playerGlow) list.add("Свечение игроков");
         if (c.chestGlow) list.add("Свечение сундуков");
+        if (c.fpsHud) list.add("Кадры");
+        if (c.cpsHud) list.add("Клики");
+        if (c.pingHud) list.add("Пинг");
+        if (c.coordsHud) list.add("Координаты");
+        if (c.speedHud) list.add("Скорость");
+        if (c.totemHud) list.add("Тотемы");
+        if (c.clockHud) list.add("Время");
+        if (c.compassHud) list.add("Направление");
         return list;
     }
 
