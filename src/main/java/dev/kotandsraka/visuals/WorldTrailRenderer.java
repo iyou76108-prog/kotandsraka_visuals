@@ -13,20 +13,21 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class WorldTrailRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Deque<Vec3> TRAIL = new ArrayDeque<>();
     private static boolean renderFailed = false;
-    private static final Map<Integer, Deque<Vec3>> PEARL_TRAILS = new HashMap<>();
 
     private WorldTrailRenderer() {}
 
@@ -39,7 +40,6 @@ public final class WorldTrailRenderer {
         VisualConfig c = VisualConfig.get();
         if (mc.player == null || mc.level == null) {
             TRAIL.clear();
-            PEARL_TRAILS.clear();
             return;
         }
 
@@ -51,23 +51,6 @@ public final class WorldTrailRenderer {
             TRAIL.clear();
         }
 
-        if (c.pearlTrail) {
-            Set<Integer> active = new HashSet<>();
-            for (Entity entity : mc.level.entitiesForRendering()) {
-                if (entity instanceof Projectile projectile
-                    && projectile.getType() == EntityType.ENDER_PEARL
-                    && projectile.getOwner() == mc.player) {
-                    active.add(entity.getId());
-                    Deque<Vec3> points = PEARL_TRAILS.computeIfAbsent(entity.getId(), id -> new ArrayDeque<>());
-                    Vec3 pos = entity.position();
-                    if (points.isEmpty() || points.peekLast().distanceToSqr(pos) > 0.0001) points.addLast(pos);
-                    while (points.size() > 36) points.removeFirst();
-                }
-            }
-            PEARL_TRAILS.keySet().removeIf(id -> !active.contains(id));
-        } else {
-            PEARL_TRAILS.clear();
-        }
     }
 
     private static void render(WorldRenderContext context) {
@@ -76,7 +59,7 @@ public final class WorldTrailRenderer {
         if (renderFailed || mc.player == null || mc.level == null) return;
 
         // Do not touch render state at all when every world renderer is disabled.
-        if (!c.playerTrail && !c.pearlTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory && !c.arrowTrajectory) return;
+        if (!c.playerTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory) return;
 
         try {
             MultiBufferSource consumers = context.consumers();
@@ -93,12 +76,6 @@ public final class WorldTrailRenderer {
 
         if (c.playerTrail && !mc.options.getCameraType().isFirstPerson() && TRAIL.size() >= 2) {
             drawPath(line, pose, TRAIL, c.trailRainbow ? null : 0xAA56D8FF, c.trailWidth, mc.player.tickCount);
-        }
-
-        if (c.pearlTrail) {
-            for (Deque<Vec3> path : PEARL_TRAILS.values()) {
-                if (path.size() >= 2) drawPath(line, pose, path, 0xDD9A70FF, Math.max(1.5f, c.trailWidth), mc.player.tickCount);
-            }
         }
 
         if (c.chinaHat && !mc.options.getCameraType().isFirstPerson()) {
@@ -120,15 +97,13 @@ public final class WorldTrailRenderer {
                 3.0, 64, 0xAA56D8FF, 1.5f);
         }
 
-        if (c.trajectory) renderTrajectory(mc, pose, line);
-        if (c.arrowTrajectory) renderOwnedArrows(mc, pose, line);
+        if (c.trajectory) renderProjectileTrajectories(mc, pose, line);
 
             matrices.popPose();
         } catch (RuntimeException exception) {
             // A bad render context must never take down the whole client while joining a world.
             renderFailed = true;
             TRAIL.clear();
-            PEARL_TRAILS.clear();
             LOGGER.error("KotAndSraka Visuals disabled its world renderer after a render error", exception);
         }
     }
@@ -181,38 +156,104 @@ public final class WorldTrailRenderer {
         return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
     }
 
-    private static void renderTrajectory(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
-        Vec3 previous = mc.player.getEyePosition();
-        Vec3 velocity = mc.player.getLookAngle().scale(1.45);
-        for (int i = 0; i < 36; i++) {
-            Vec3 next = previous.add(velocity);
-            int alpha = Math.max(35, 220 - i * 5);
-            int color = (alpha << 24) | (VisualConfig.accentColor() & 0x00FFFFFF);
-            drawLine(line, pose, previous, next, color, 1.6f);
-            previous = next;
-            velocity = velocity.add(0, -0.035, 0).scale(0.99);
+    private static void renderProjectileTrajectories(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
+        int accent = VisualConfig.accentColor();
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Projectile projectile) || projectile.getOwner() != mc.player) continue;
+
+            EntityType<?> type = entity.getType();
+            double gravity;
+            double drag;
+            float width;
+            if (type == EntityType.ENDER_PEARL) {
+                gravity = 0.03;
+                drag = 0.99;
+                width = 1.65f;
+            } else if (type == EntityType.ARROW || type == EntityType.SPECTRAL_ARROW) {
+                gravity = 0.05;
+                drag = 0.99;
+                width = 1.5f;
+            } else if (type == EntityType.TRIDENT) {
+                gravity = 0.05;
+                drag = 0.99;
+                width = 1.9f;
+            } else if (type == EntityType.WIND_CHARGE) {
+                // Wind charges fly with very little vertical drop and lose speed quickly.
+                gravity = 0.0;
+                drag = 0.95;
+                width = 1.8f;
+            } else {
+                continue;
+            }
+
+            renderProjectilePrediction(mc, projectile, pose, line, gravity, drag, width, accent);
         }
     }
 
-    private static void renderOwnedArrows(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
-        for (Entity entity : mc.level.entitiesForRendering()) {
-            if (!(entity instanceof Projectile projectile)
-                || projectile.getType() != EntityType.ARROW
-                || projectile.getOwner() != mc.player) continue;
+    private static void renderProjectilePrediction(Minecraft mc, Projectile projectile,
+                                                   PoseStack.Pose pose, VertexConsumer line,
+                                                   double gravity, double drag, float width, int accent) {
+        Vec3 position = projectile.position();
+        Vec3 velocity = projectile.getDeltaMovement();
+        if (velocity.lengthSqr() < 0.0001) return;
 
-            Vec3 previous = entity.position().add(0.0, 0.12, 0.0);
-            Vec3 velocity = projectile.getDeltaMovement();
-            if (velocity.lengthSqr() < 0.0001) continue;
+        List<Vec3> points = new ArrayList<>(96);
+        points.add(position);
+        BlockPos landingBlock = null;
 
-            for (int i = 0; i < 28; i++) {
-                Vec3 next = previous.add(velocity);
-                int alpha = Math.max(35, 220 - i * 6);
-                int color = (alpha << 24) | (VisualConfig.accentColor() & 0x00FFFFFF);
-                drawLine(line, pose, previous, next, color, 1.4f);
-                previous = next;
-                velocity = velocity.add(0.0, -0.05, 0.0).scale(0.99);
+        // Simulate one tick at a time and raycast every segment against real block collision shapes.
+        for (int tick = 0; tick < 120; tick++) {
+            Vec3 next = position.add(velocity);
+            BlockHitResult hit = mc.level.clip(new ClipContext(position, next,
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, projectile));
+
+            if (hit.getType() == HitResult.Type.BLOCK) {
+                points.add(hit.getLocation());
+                landingBlock = hit.getBlockPos();
+                break;
             }
+
+            points.add(next);
+            position = next;
+            velocity = velocity.scale(drag).add(0.0, -gravity, 0.0);
+            if (velocity.lengthSqr() < 0.0004) break;
         }
+
+        for (int i = 1; i < points.size(); i++) {
+            int alpha = Math.max(55, 225 - i * 2);
+            drawLine(line, pose, points.get(i - 1), points.get(i),
+                withAlpha(accent, alpha), width);
+        }
+
+        if (landingBlock != null) {
+            drawBlockMarker(line, pose, landingBlock, accent);
+        }
+    }
+
+    private static void drawBlockMarker(VertexConsumer line, PoseStack.Pose pose,
+                                        BlockPos block, int color) {
+        double x0 = block.getX() + 0.015;
+        double y0 = block.getY() + 0.015;
+        double z0 = block.getZ() + 0.015;
+        double x1 = block.getX() + 0.985;
+        double y1 = block.getY() + 0.985;
+        double z1 = block.getZ() + 0.985;
+
+        Vec3[] corners = {
+            new Vec3(x0, y0, z0), new Vec3(x1, y0, z0),
+            new Vec3(x0, y1, z0), new Vec3(x1, y1, z0),
+            new Vec3(x0, y0, z1), new Vec3(x1, y0, z1),
+            new Vec3(x0, y1, z1), new Vec3(x1, y1, z1)
+        };
+        for (int i = 0; i < corners.length; i++) {
+            if ((i & 1) == 0) drawLine(line, pose, corners[i], corners[i | 1], color, 2.4f);
+            if ((i & 2) == 0) drawLine(line, pose, corners[i], corners[i | 2], color, 2.4f);
+            if ((i & 4) == 0) drawLine(line, pose, corners[i], corners[i | 4], color, 2.4f);
+        }
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
     }
 
     private static void drawPath(VertexConsumer line, PoseStack.Pose pose, Deque<Vec3> points,
