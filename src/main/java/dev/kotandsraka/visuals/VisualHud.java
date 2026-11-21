@@ -529,7 +529,7 @@ public final class VisualHud {
         if (mc.level == null || mc.player == null || g.guiHeight() <= 0) return;
 
         Camera camera = mc.gameRenderer.getMainCamera();
-        Vec3 cameraPos = camera.getPosition();
+        Vec3 cameraPos = camera.position();
         Vector3f forward = new Vector3f(0.0f, 0.0f, -1.0f).rotate(camera.rotation());
         Vector3f right = new Vector3f(1.0f, 0.0f, 0.0f).rotate(camera.rotation());
         Vector3f up = new Vector3f(0.0f, 1.0f, 0.0f).rotate(camera.rotation());
