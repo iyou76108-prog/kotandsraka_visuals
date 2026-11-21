@@ -6,7 +6,9 @@ import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +16,8 @@ import java.nio.file.Path;
 public final class VisualConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("kotandsraka_visuals.json");
+    private static final Path PROFILE_DIR = FabricLoader.getInstance().getConfigDir().resolve("kotcode").resolve("profiles");
+    private static final String PROFILE_PREFIX = "KOTCODE1:";
     private static final int CURRENT_CONFIG_VERSION = 4;
 
     // All visual/gameplay toggles start disabled. The first launch after this update
@@ -102,6 +106,7 @@ public final class VisualConfig {
     // Kept for compatibility with older configuration files.
     public int colorPreset = 0;
     public float menuScale = 1.0f;
+    public float menuOpacity = 0.72f;
     public float hudOpacity = 0.72f;
 
     // Numeric settings
@@ -254,6 +259,7 @@ public final class VisualConfig {
         if (INSTANCE.moduleTextHue == null) INSTANCE.moduleTextHue = 0.0f;
         if (INSTANCE.moduleTextSaturation == null) INSTANCE.moduleTextSaturation = 0.0f;
         if (INSTANCE.moduleTextValue == null) INSTANCE.moduleTextValue = 1.0f;
+        INSTANCE.menuOpacity = clampMenuOpacity(INSTANCE.menuOpacity);
         save();
     }
 
@@ -268,6 +274,126 @@ public final class VisualConfig {
     public static void reset() {
         INSTANCE = new VisualConfig();
         save();
+    }
+
+    private static float clampMenuOpacity(float value) {
+        if (!Float.isFinite(value)) return 0.72f;
+        return Math.max(0.20f, Math.min(1.0f, value));
+    }
+
+    private static String cleanProfileName(String rawName) {
+        if (rawName == null) return null;
+        String name = rawName.trim();
+        if (name.isEmpty() || name.length() > 32
+            || !name.matches("[\\p{L}\\p{N}_ -]{1,32}")) return null;
+        return name;
+    }
+
+    private static Path profilePath(String rawName) {
+        String name = cleanProfileName(rawName);
+        return name == null ? null : PROFILE_DIR.resolve(name + ".json");
+    }
+
+    public static List<String> profileNames() {
+        try {
+            Files.createDirectories(PROFILE_DIR);
+            try (var paths = Files.list(PROFILE_DIR)) {
+                return paths.filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .filter(fileName -> fileName.endsWith(".json"))
+                    .map(fileName -> fileName.substring(0, fileName.length() - 5))
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .toList();
+            }
+        } catch (IOException ignored) {
+            return List.of();
+        }
+    }
+
+    public static boolean saveProfile(String rawName) {
+        Path path = profilePath(rawName);
+        if (path == null) return false;
+        try {
+            Files.createDirectories(PROFILE_DIR);
+            Files.writeString(path, GSON.toJson(get()), StandardCharsets.UTF_8);
+            return true;
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
+
+    public static boolean deleteProfile(String rawName) {
+        Path path = profilePath(rawName);
+        if (path == null) return false;
+        try {
+            return Files.deleteIfExists(path);
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
+
+    private static VisualConfig parseProfile(String json) {
+        var element = JsonParser.parseString(json);
+        if (!element.isJsonObject()) return null;
+        var object = element.getAsJsonObject();
+        if (object.has("configVersion") && !object.get("configVersion").isJsonNull()
+            && object.get("configVersion").getAsInt() > CURRENT_CONFIG_VERSION) return null;
+
+        VisualConfig profile = GSON.fromJson(object, VisualConfig.class);
+        if (profile == null) return null;
+        profile.configVersion = CURRENT_CONFIG_VERSION;
+        profile.language = "en".equalsIgnoreCase(profile.language) ? "en" : "ru";
+        if (profile.friends == null) profile.friends = new ArrayList<>();
+        if (profile.moduleTextHue == null) profile.moduleTextHue = 0.0f;
+        if (profile.moduleTextSaturation == null) profile.moduleTextSaturation = 0.0f;
+        if (profile.moduleTextValue == null) profile.moduleTextValue = 1.0f;
+        profile.menuOpacity = clampMenuOpacity(profile.menuOpacity);
+        return profile;
+    }
+
+    public static boolean loadProfile(String rawName) {
+        Path path = profilePath(rawName);
+        if (path == null) return false;
+        try {
+            VisualConfig profile = parseProfile(Files.readString(path, StandardCharsets.UTF_8));
+            if (profile == null) return false;
+            INSTANCE = profile;
+            save();
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    public static String exportProfile(String rawName) {
+        Path path = profilePath(rawName);
+        if (path == null) return null;
+        try {
+            String json = Files.readString(path, StandardCharsets.UTF_8);
+            if (parseProfile(json) == null) return null;
+            String encoded = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(json.getBytes(StandardCharsets.UTF_8));
+            return PROFILE_PREFIX + encoded;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public static boolean importProfile(String rawName, String transferCode) {
+        Path path = profilePath(rawName);
+        if (path == null || transferCode == null) return false;
+        try {
+            String code = transferCode.trim().replaceAll("\\s+", "");
+            if (!code.startsWith(PROFILE_PREFIX)) return false;
+            byte[] decoded = Base64.getUrlDecoder().decode(code.substring(PROFILE_PREFIX.length()));
+            VisualConfig profile = parseProfile(new String(decoded, StandardCharsets.UTF_8));
+            if (profile == null) return false;
+            Files.createDirectories(PROFILE_DIR);
+            Files.writeString(path, GSON.toJson(profile), StandardCharsets.UTF_8);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     public static void resetHudPositions() {
