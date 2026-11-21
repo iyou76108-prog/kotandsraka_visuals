@@ -409,17 +409,23 @@ public final class VisualHud {
         List<String> modules = activeModules(cfg);
         if (modules.isEmpty()) return;
 
+        float scale = activeModulesScale(cfg);
         int x = HudLayoutEditor.modulesX(mc, cfg);
         int y = cfg.modulesHudY;
-        int width = 0;
-        for (String module : modules) width = Math.max(width, mc.font.width(module));
-        int panelWidth = width + 14;
-        g.fill(x, y, x + panelWidth, y + modules.size() * 12 + 20, VisualConfig.panelColor());
-        g.fill(x, y, x + panelWidth, y + 2, VisualConfig.accentColor());
-        g.drawString(mc.font, "KOTCODE", x + 6, y + 6, VisualConfig.accentColor(), false);
+        int panelWidth = activeModulesBaseWidth(mc, modules);
+        int panelHeight = activeModulesBaseHeight(modules.size());
+        int textColor = VisualConfig.moduleTextColor();
+
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
+        g.fill(0, 0, panelWidth, panelHeight, VisualConfig.panelColor());
+        g.fill(0, 0, panelWidth, 2, VisualConfig.accentColor());
+        g.drawString(mc.font, "KOTCODE", 6, 6, textColor, false);
         for (int i = 0; i < modules.size(); i++) {
-            g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, VisualConfig.moduleTextColor(), false);
+            g.drawString(mc.font, modules.get(i), 6, 19 + i * 11, textColor, false);
         }
+        g.pose().popPose();
     }
 
     public static int activeModuleCount(VisualConfig c) {
@@ -459,16 +465,29 @@ public final class VisualHud {
         return list;
     }
 
-    public static int activeModulesWidth(Minecraft mc, VisualConfig cfg) {
-        List<String> modules = activeModules(cfg);
-        if (modules.isEmpty()) return 0;
+    private static float activeModulesScale(VisualConfig cfg) {
+        if (!Float.isFinite(cfg.modulesHudScale)) return 1.0f;
+        return Math.max(0.40f, Math.min(1.0f, cfg.modulesHudScale));
+    }
+
+    private static int activeModulesBaseWidth(Minecraft mc, List<String> modules) {
         int width = mc.font.width("KOTCODE");
         for (String module : modules) width = Math.max(width, mc.font.width(module));
         return width + 14;
     }
 
+    private static int activeModulesBaseHeight(int moduleCount) {
+        return moduleCount * 12 + 20;
+    }
+
+    public static int activeModulesWidth(Minecraft mc, VisualConfig cfg) {
+        List<String> modules = activeModules(cfg);
+        if (modules.isEmpty()) return 0;
+        return (int) Math.ceil(activeModulesBaseWidth(mc, modules) * activeModulesScale(cfg));
+    }
+
     public static int activeModulesHeight(VisualConfig cfg) {
-        return activeModules(cfg).size() * 12 + 20;
+        return (int) Math.ceil(activeModulesBaseHeight(activeModules(cfg).size()) * activeModulesScale(cfg));
     }
 
     private static List<String> effectLines(Minecraft mc, boolean preview) {

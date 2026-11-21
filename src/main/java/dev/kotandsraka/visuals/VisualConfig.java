@@ -152,6 +152,7 @@ public final class VisualConfig {
     public int compassHudY = 158;
     public int modulesHudX = -1;
     public int modulesHudY = 8;
+    public float modulesHudScale = 1.0f;
     public int effectsHudX = 8;
     public int effectsHudY = 185;
     public int combo = 0;

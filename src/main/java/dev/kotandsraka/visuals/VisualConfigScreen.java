@@ -313,6 +313,10 @@ public final class VisualConfigScreen extends Screen {
                     v -> c.hitSoundVolume = (float) v);
                 addSetting("ПРОСЛУШАТЬ ЗВУК", x, firstY + 68, colWidth, VisualHud::previewHitSound);
             }
+            case "activeModulesHud" -> {
+                addSlider("МАСШТАБ СПИСКА ФУНКЦИЙ", x, firstY, colWidth, 0.40, 1.0, 0.05,
+                    c.modulesHudScale, v -> c.modulesHudScale = (float) v);
+            }
             case "hitParticles", "criticalParticles" -> {
                 addSlider("КОЛИЧЕСТВО ЧАСТИЦ", x, firstY, colWidth, 2, 24, 2, c.particleCount,
                     v -> c.particleCount = (int) Math.round(v));
