@@ -152,7 +152,7 @@ public final class VisualHud {
             if (cfg.targetHud) HudLayoutEditor.drawFrame(graphics, cfg.targetHudX, cfg.targetHudY, 150, 42, KotCodeLanguage.text("ЦЕЛЬ"));
             if (cfg.armorHud) HudLayoutEditor.drawFrame(graphics, cfg.armorHudX, cfg.armorHudY, 78, 46, KotCodeLanguage.text("БРОНЯ"));
             if (cfg.keystrokes) HudLayoutEditor.drawFrame(graphics,
-                HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, "КЛАВИШИ");
+                HudLayoutEditor.keystrokesX(mc, cfg), HudLayoutEditor.keystrokesY(mc, cfg), 78, 68, KotCodeLanguage.text("КЛАВИШИ"));
             drawStatFrames(graphics, mc, cfg);
             if (cfg.activeModulesHud && activeModuleCount(cfg) > 0) {
                 HudLayoutEditor.drawFrame(graphics, HudLayoutEditor.modulesX(mc, cfg), cfg.modulesHudY,
