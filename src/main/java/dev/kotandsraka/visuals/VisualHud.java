@@ -394,7 +394,7 @@ public final class VisualHud {
         g.fill(x, y, x + panelWidth, y + 2, VisualConfig.accentColor());
         g.drawString(mc.font, "KOTCODE", x + 6, y + 6, VisualConfig.accentColor(), false);
         for (int i = 0; i < modules.size(); i++) {
-            g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, 0xFFEAF5FF, false);
+            g.drawString(mc.font, modules.get(i), x + 6, y + 19 + i * 11, VisualConfig.moduleTextColor(), false);
         }
     }
 
