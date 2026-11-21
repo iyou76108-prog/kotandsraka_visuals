@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "ItemInHandRendererMixin",
-    "ScreenHudDragMixin"
+    "ScreenHudDragMixin",
+    "EntityOutlineColorMixin"
   ],
   "injectors": {
     "defaultRequire": 1
