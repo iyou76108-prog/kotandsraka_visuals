@@ -119,6 +119,10 @@ public final class KotCodeLanguage {
         put("Пока нет добавленных друзей.", "No friends have been added yet.");
         put("Показаны первые 6 друзей. Удаляйте их нажатием на ник.", "First 6 friends shown. Click a name to remove it.");
         put("ЦВЕТ ОБВОДКИ ДРУЗЕЙ", "FRIEND OUTLINE COLOR");
+        put("Цвет названий функций", "Function Name Color");
+        put("Отдельный цвет текста названий в Shift и HUD активных модулей", "Separate text color for names in Shift and Active Modules HUD");
+        put("ПРИМЕР НАЗВАНИЙ ФУНКЦИЙ", "FUNCTION NAME PREVIEW");
+        put("Шляпа  •  Авто-бег  •  След игрока", "Hat  •  Auto Sprint  •  Player Trail");
         put("КОЛИЧЕСТВО ЧАСТИЦ", "PARTICLE COUNT");
         put("ФОРМА: ", "SHAPE: ");
         put("РАЗБРОС", "SPREAD");
