@@ -710,7 +710,7 @@ public final class VisualConfigScreen extends Screen {
                         sx + 12, t + 181, MUTED, false);
                 } else if (friends.size() > 6) {
                     g.drawString(this.font, KotCodeLanguage.text("Показаны первые 6 друзей. Удаляйте их нажатием на ник."),
-                        sx + 12, t + 318, MUTED, false);
+                        sx + 12, t + 308, MUTED, false);
                 }
             } else if (selected.toggle() == null) {
                 g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);
