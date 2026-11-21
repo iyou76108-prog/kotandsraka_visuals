@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -21,6 +23,7 @@ public final class VisualConfig {
     // Last opened Shift menu location, restored whenever the menu is opened again.
     public String lastMenuCategory = "Бой";
     public String lastMenuFeature = "hitParticles";
+    public String language = "ru";
 
     // Combat
     public boolean hitParticles = false;
@@ -72,6 +75,11 @@ public final class VisualConfig {
     public boolean compassHud = false;
     public boolean activeModulesHud = false;
     public boolean playerGlow = false;
+    public boolean friendGlow = false;
+    public List<String> friends = new ArrayList<>();
+    public float friendColorHue = 125.0f;
+    public float friendColorSaturation = 0.90f;
+    public float friendColorValue = 0.95f;
     public boolean chestGlow = false;
 
     // Movement
@@ -180,6 +188,21 @@ public final class VisualConfig {
         return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
+    public static int friendAccentColor() {
+        VisualConfig cfg = get();
+        return hsvToRgb(cfg.friendColorHue, cfg.friendColorSaturation, cfg.friendColorValue);
+    }
+
+    public static boolean isFriend(String name) {
+        if (name == null || name.isBlank()) return false;
+        List<String> names = get().friends;
+        if (names == null) return false;
+        for (String friend : names) {
+            if (friend != null && friend.equalsIgnoreCase(name.trim())) return true;
+        }
+        return false;
+    }
+
     public static int panelColor() {
         return 0xEE11141B;
     }
@@ -210,6 +233,11 @@ public final class VisualConfig {
             INSTANCE = new VisualConfig();
         }
         INSTANCE.configVersion = CURRENT_CONFIG_VERSION;
+        if (INSTANCE.language == null
+            || (!"ru".equalsIgnoreCase(INSTANCE.language) && !"en".equalsIgnoreCase(INSTANCE.language))) {
+            INSTANCE.language = "ru";
+        }
+        if (INSTANCE.friends == null) INSTANCE.friends = new ArrayList<>();
         save();
     }
 
