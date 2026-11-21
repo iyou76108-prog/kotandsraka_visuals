@@ -233,15 +233,15 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
                 add(list, "armorHud", "HUD брони", "Слоты брони и её прочность", c.armorHud, () -> c.armorHud = !c.armorHud);
                 add(list, "keystrokes", "Клавиши", "Отображение нажатий WASD и кнопок мыши", c.keystrokes, () -> c.keystrokes = !c.keystrokes);
-                add(list, "fpsHud", "FPS", "Количество кадров в секунду", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
-                add(list, "cpsHud", "CPS", "Количество кликов в секунду", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
-                add(list, "pingHud", "Пинг", "Задержка соединения с сервером", c.pingHud, () -> c.pingHud = !c.pingHud);
-                add(list, "coordsHud", "Координаты", "Координаты игрока XYZ", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
-                add(list, "speedHud", "Скорость", "Скорость передвижения в блоках в секунду", c.speedHud, () -> c.speedHud = !c.speedHud);
-                add(list, "totemHud", "Счётчик тотемов", "Тотемы в инвентаре и второй руке", c.totemHud, () -> c.totemHud = !c.totemHud);
+                add(list, "fpsHud", "Кадры", "Показывать частоту кадров в секунду", c.fpsHud, () -> c.fpsHud = !c.fpsHud);
+                add(list, "cpsHud", "Клики", "Отдельный счётчик кликов ЛКМ и ПКМ", c.cpsHud, () -> c.cpsHud = !c.cpsHud);
+                add(list, "pingHud", "Пинг", "Показывать задержку соединения с сервером", c.pingHud, () -> c.pingHud = !c.pingHud);
+                add(list, "coordsHud", "Координаты", "Отдельная панель координат X, Y и Z", c.coordsHud, () -> c.coordsHud = !c.coordsHud);
+                add(list, "speedHud", "Скорость", "Показывать скорость передвижения в блоках в секунду", c.speedHud, () -> c.speedHud = !c.speedHud);
+                add(list, "totemHud", "Тотемы", "Отдельный счётчик тотемов в инвентаре и второй руке", c.totemHud, () -> c.totemHud = !c.totemHud);
                 add(list, "potionHud", "Список эффектов", "Названия, уровни и оставшееся время активных эффектов", c.potionHud, () -> c.potionHud = !c.potionHud);
-                add(list, "clockHud", "Часы", "Время игрового мира Minecraft", c.clockHud, () -> c.clockHud = !c.clockHud);
-                add(list, "compassHud", "Компас", "Направление взгляда игрока", c.compassHud, () -> c.compassHud = !c.compassHud);
+                add(list, "clockHud", "Время", "Отдельно показывать игровое время Minecraft", c.clockHud, () -> c.clockHud = !c.clockHud);
+                add(list, "compassHud", "Направление", "Отдельно показывать сторону света, куда смотрит игрок", c.compassHud, () -> c.compassHud = !c.compassHud);
                 add(list, "activeModulesHud", "Активные модули", "Список включённых модулей", c.activeModulesHud, () -> c.activeModulesHud = !c.activeModulesHud);
                 add(list, "comboHud", "Счётчик комбо", "Показывать количество последовательных попаданий", c.comboHud, () -> c.comboHud = !c.comboHud);
             }
