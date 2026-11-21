@@ -437,7 +437,6 @@ public final class VisualHud {
         if (c.playerTrail) list.add(KotCodeLanguage.text("След игрока"));
         if (c.trajectory) list.add(KotCodeLanguage.text("Траектория"));
         if (c.chinaHat) list.add(KotCodeLanguage.text("Шляпа"));
-        if (c.bodyGlow) list.add(KotCodeLanguage.text("Свечение тела"));
         if (c.worldParticles) list.add(KotCodeLanguage.text("Частицы мира"));
         if (c.autoSprint) list.add(KotCodeLanguage.text("Авто-бег"));
         if (c.skullJump) list.add(KotCodeLanguage.text("Череп при прыжке"));
