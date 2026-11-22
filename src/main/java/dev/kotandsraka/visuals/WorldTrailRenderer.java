@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
@@ -27,6 +28,8 @@ import java.util.List;
 public final class WorldTrailRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Deque<Vec3> TRAIL = new ArrayDeque<>();
+    private static final Deque<JumpRing> JUMP_RINGS = new ArrayDeque<>();
+    private record JumpRing(Vec3 center, int startTick) {}
     private static boolean renderFailed = false;
 
     private WorldTrailRenderer() {}
@@ -35,12 +38,26 @@ public final class WorldTrailRenderer {
         WorldRenderEvents.AFTER_ENTITIES.register(WorldTrailRenderer::render);
     }
 
+    public static void spawnJumpRing(Player player) {
+        if (player == null) return;
+        double groundY = player.blockPosition().getY();
+        Vec3 center = new Vec3(player.getX(), groundY + 1.018, player.getZ());
+        if (JUMP_RINGS.size() >= 8) JUMP_RINGS.removeFirst();
+        JUMP_RINGS.addLast(new JumpRing(center, player.tickCount));
+    }
+
     public static void tick() {
         Minecraft mc = Minecraft.getInstance();
         VisualConfig c = VisualConfig.get();
         if (mc.player == null || mc.level == null) {
             TRAIL.clear();
+            JUMP_RINGS.clear();
             return;
+        }
+
+        if (!c.jumpRings) JUMP_RINGS.clear();
+        else while (!JUMP_RINGS.isEmpty() && mc.player.tickCount - JUMP_RINGS.peekFirst().startTick() > 36) {
+            JUMP_RINGS.removeFirst();
         }
 
         if (c.playerTrail) {
@@ -59,7 +76,8 @@ public final class WorldTrailRenderer {
         if (renderFailed || mc.player == null || mc.level == null) return;
 
         // Do not touch render state at all when every world renderer is disabled.
-        if (!c.playerTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory) return;
+        if (!c.playerTrail && !c.chinaHat && !c.targetEsp && !c.hitRange && !c.trajectory
+            && !c.jumpRings) return;
 
         try {
             MultiBufferSource consumers = context.consumers();
@@ -98,6 +116,7 @@ public final class WorldTrailRenderer {
         }
 
         if (c.trajectory) renderProjectileTrajectories(mc, pose, line);
+        if (c.jumpRings) renderJumpRings(mc, c, pose, line);
 
             matrices.popPose();
         } catch (RuntimeException exception) {
@@ -106,6 +125,126 @@ public final class WorldTrailRenderer {
             TRAIL.clear();
             LOGGER.error("KotAndSraka Visuals disabled its world renderer after a render error", exception);
         }
+    }
+
+    private static void renderJumpRings(Minecraft mc, VisualConfig cfg,
+                                         PoseStack.Pose pose, VertexConsumer line) {
+        if (JUMP_RINGS.isEmpty()) return;
+        float scaleSetting = Math.max(0.60f, Math.min(1.80f, cfg.jumpRingScale));
+        int pattern = Math.floorMod(cfg.jumpRingPattern, 3);
+
+        for (JumpRing ring : JUMP_RINGS) {
+            int age = mc.player.tickCount - ring.startTick();
+            if (age < 0 || age > 36) continue;
+            float progress = age / 36.0f;
+            int alpha = Math.max(0, Math.min(235, Math.round(235.0f * (1.0f - progress))));
+            int color = withAlpha(VisualConfig.jumpRingColor(), alpha);
+            double pulse = 1.0 + Math.sin(age * 0.22) * 0.018;
+            double scale = scaleSetting * (0.92 + progress * 0.10) * pulse;
+            Vec3 center = ring.center();
+            float width = 2.8f - progress * 0.7f;
+
+            // Flat "plate" rim with two inner tracks and small radial marks.
+            drawCircle(line, pose, center, 1.04 * scale, 72, color, width + 0.35f);
+            drawCircle(line, pose, center.add(0.0, 0.008, 0.0), 0.86 * scale, 72,
+                withAlpha(VisualConfig.jumpRingColor(), alpha * 210 / 255), Math.max(1.2f, width * 0.72f));
+            drawCircle(line, pose, center.add(0.0, 0.014, 0.0), 0.57 * scale, 56,
+                withAlpha(VisualConfig.jumpRingColor(), alpha * 180 / 255), Math.max(1.0f, width * 0.58f));
+
+            for (int i = 0; i < 24; i++) {
+                double angle = Math.PI * 2.0 * i / 24.0;
+                Vec3 outer = flatPoint(center, Math.cos(angle) * 0.96 * scale,
+                    Math.sin(angle) * 0.96 * scale, 0.010);
+                Vec3 inner = flatPoint(center, Math.cos(angle) * 0.88 * scale,
+                    Math.sin(angle) * 0.88 * scale, 0.010);
+                drawLine(line, pose, outer, inner, color, Math.max(1.0f, width * 0.72f));
+            }
+
+            Vec3 symbolCenter = center.add(0.0, 0.022, 0.0);
+            switch (pattern) {
+                case 1 -> drawStarSymbol(line, pose, symbolCenter, scale * 0.92, color, width);
+                case 2 -> drawBananaSymbol(line, pose, symbolCenter, scale * 0.92, color, width);
+                default -> drawSkullSymbol(line, pose, symbolCenter, scale * 0.92, color, width);
+            }
+        }
+    }
+
+    private static Vec3 flatPoint(Vec3 center, double x, double z, double yOffset) {
+        return new Vec3(center.x + x, center.y + yOffset, center.z + z);
+    }
+
+    private static void drawShape(VertexConsumer line, PoseStack.Pose pose, Vec3 center,
+                                  double[][] points, double scale, int color, float width, boolean close) {
+        if (points.length < 2) return;
+        Vec3 previous = flatPoint(center, points[0][0] * scale, points[0][1] * scale, 0.0);
+        Vec3 first = previous;
+        for (int i = 1; i < points.length; i++) {
+            Vec3 next = flatPoint(center, points[i][0] * scale, points[i][1] * scale, 0.0);
+            drawLine(line, pose, previous, next, color, width);
+            previous = next;
+        }
+        if (close) drawLine(line, pose, previous, first, color, width);
+    }
+
+    private static void drawSkullSymbol(VertexConsumer line, PoseStack.Pose pose,
+                                        Vec3 center, double scale, int color, float width) {
+        double[][] skull = {
+            {-0.22, -0.12}, {-0.25, 0.00}, {-0.22, 0.18}, {-0.14, 0.27},
+            {0.00, 0.30}, {0.14, 0.27}, {0.22, 0.18}, {0.25, 0.00},
+            {0.22, -0.12}, {0.16, -0.19}, {0.16, -0.31}, {0.07, -0.31},
+            {0.07, -0.23}, {-0.07, -0.23}, {-0.07, -0.31}, {-0.16, -0.31},
+            {-0.16, -0.19}
+        };
+        drawShape(line, pose, center, skull, scale, color, width, true);
+        drawShape(line, pose, center,
+            new double[][]{{-0.17, 0.02}, {-0.08, 0.02}, {-0.08, 0.11}, {-0.17, 0.11}},
+            scale, color, width, true);
+        drawShape(line, pose, center,
+            new double[][]{{0.08, 0.02}, {0.17, 0.02}, {0.17, 0.11}, {0.08, 0.11}},
+            scale, color, width, true);
+        drawShape(line, pose, center,
+            new double[][]{{-0.09, -0.16}, {-0.09, -0.23}},
+            scale, color, width, false);
+        drawShape(line, pose, center,
+            new double[][]{{0.00, -0.16}, {0.00, -0.23}},
+            scale, color, width, false);
+        drawShape(line, pose, center,
+            new double[][]{{0.09, -0.16}, {0.09, -0.23}},
+            scale, color, width, false);
+    }
+
+    private static void drawStarSymbol(VertexConsumer line, PoseStack.Pose pose,
+                                       Vec3 center, double scale, int color, float width) {
+        double[][] star = new double[10][2];
+        for (int i = 0; i < 10; i++) {
+            double angle = -Math.PI / 2.0 + Math.PI * i / 5.0;
+            double radius = (i & 1) == 0 ? 0.34 : 0.15;
+            star[i][0] = Math.cos(angle) * radius;
+            star[i][1] = Math.sin(angle) * radius;
+        }
+        drawShape(line, pose, center, star, scale, color, width + 0.25f, true);
+    }
+
+    private static void drawBananaSymbol(VertexConsumer line, PoseStack.Pose pose,
+                                         Vec3 center, double scale, int color, float width) {
+        double[][] outer = new double[17][2];
+        double[][] inner = new double[17][2];
+        for (int i = 0; i <= 16; i++) {
+            double x = -0.34 + (0.68 * i / 16.0);
+            double t = x / 0.34;
+            outer[i][0] = x;
+            outer[i][1] = 0.20 * (1.0 - t * t) + 0.035;
+            inner[i][0] = x;
+            inner[i][1] = 0.075 * (1.0 - t * t) - 0.025;
+        }
+        drawShape(line, pose, center, outer, scale, color, width + 0.25f, false);
+        drawShape(line, pose, center, inner, scale, color, width + 0.25f, false);
+        drawShape(line, pose, center,
+            new double[][]{{-0.34, 0.035}, {-0.30, -0.02}, {-0.25, -0.035}},
+            scale, color, width, false);
+        drawShape(line, pose, center,
+            new double[][]{{0.34, 0.035}, {0.30, -0.02}, {0.25, -0.035}},
+            scale, color, width, false);
     }
 
     private static void renderChinaHat(Minecraft mc, VisualConfig c, PoseStack.Pose pose, VertexConsumer line) {

@@ -206,6 +206,7 @@ public final class VisualConfigScreen extends Screen {
             }
             case "Движение" -> {
                 add(list, "autoSprint", "Авто-бег", "Автоматически включать бег при движении вперёд", c.autoSprint, () -> c.autoSprint = !c.autoSprint);
+                add(list, "autoJump", "Авто-прыжок", "Пока удерживается пробел — прыгать сразу после приземления", c.autoJump, () -> c.autoJump = !c.autoJump);
                 add(list, "playerTrail", "След игрока", "Оставлять след за игроком", c.playerTrail, () -> c.playerTrail = !c.playerTrail);
                 add(list, "jumpRings", "Кольцо прыжка", "Кольцо из частиц при прыжке", c.jumpRings, () -> c.jumpRings = !c.jumpRings);
                 add(list, "skullJump", "Череп при прыжке", "Показывать череп рядом с прицелом при прыжке", c.skullJump, () -> c.skullJump = !c.skullJump);
@@ -332,6 +333,12 @@ public final class VisualConfigScreen extends Screen {
                     v -> c.particleLifetimeMs = (int) Math.round(v));
                 addSettingToggle("КРИТИЧЕСКИЕ ЧАСТИЦЫ: " + onOff(c.criticalParticles),
                     x, firstY + 204, colWidth, () -> c.criticalParticles = !c.criticalParticles);
+            }
+            case "jumpRings" -> {
+                addSetting("РИСУНОК: " + jumpRingPatternName(c.jumpRingPattern), x, firstY, colWidth,
+                    () -> c.jumpRingPattern = (Math.floorMod(c.jumpRingPattern, 3) + 1) % 3);
+                addSlider("МАСШТАБ ПЛОСКОГО КОЛЬЦА", x, firstY + 34, colWidth, 0.60, 1.80, 0.05,
+                    c.jumpRingScale, v -> c.jumpRingScale = (float) v);
             }
             case "playerTrail", "trailRainbow" -> {
                 addSlider("ШИРИНА СЛЕДА", x, firstY, colWidth, 1.0, 5.0, 0.1, c.trailWidth,
@@ -583,12 +590,13 @@ public final class VisualConfigScreen extends Screen {
     private int pickerY() {
         if ("friendList".equals(selectedId)) return top() + 340;
         if ("moduleTextColor".equals(selectedId)) return top() + 185;
+        if ("jumpRings".equals(selectedId)) return top() + 248;
         return top() + 148;
     }
 
     private boolean hasColorPicker() {
         return "theme".equals(selectedId) || "friendList".equals(selectedId)
-            || "moduleTextColor".equals(selectedId);
+            || "moduleTextColor".equals(selectedId) || "jumpRings".equals(selectedId);
     }
 
     private int pickerWidth() {
@@ -611,11 +619,13 @@ public final class VisualConfigScreen extends Screen {
         VisualConfig cfg = VisualConfig.get();
         boolean friendPicker = "friendList".equals(selectedId);
         boolean textPicker = "moduleTextColor".equals(selectedId);
+        boolean jumpRingPicker = "jumpRings".equals(selectedId);
         if (hue) {
             float amount = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
             float nextHue = Math.max(0.0f, Math.min(359.9f, amount * 360.0f));
             if (friendPicker) cfg.friendColorHue = nextHue;
             else if (textPicker) cfg.moduleTextHue = nextHue;
+            else if (jumpRingPicker) cfg.jumpRingHue = nextHue;
             else cfg.colorHue = nextHue;
         } else {
             float saturation = (float) ((mouseX - pickerX()) / Math.max(1.0, pickerWidth()));
@@ -628,6 +638,9 @@ public final class VisualConfigScreen extends Screen {
             } else if (textPicker) {
                 cfg.moduleTextSaturation = saturation;
                 cfg.moduleTextValue = brightness;
+            } else if (jumpRingPicker) {
+                cfg.jumpRingSaturation = saturation;
+                cfg.jumpRingValue = brightness;
             } else {
                 cfg.colorSaturation = saturation;
                 cfg.colorValue = brightness;
@@ -641,21 +654,22 @@ public final class VisualConfigScreen extends Screen {
         VisualConfig cfg = VisualConfig.get();
         boolean friendPicker = "friendList".equals(selectedId);
         boolean textPicker = "moduleTextColor".equals(selectedId);
+        boolean jumpRingPicker = "jumpRings".equals(selectedId);
         float hue = friendPicker ? cfg.friendColorHue
-            : textPicker ? cfg.moduleTextHue : cfg.colorHue;
+            : textPicker ? cfg.moduleTextHue : jumpRingPicker ? cfg.jumpRingHue : cfg.colorHue;
         float saturationValue = friendPicker ? cfg.friendColorSaturation
-            : textPicker ? cfg.moduleTextSaturation : cfg.colorSaturation;
+            : textPicker ? cfg.moduleTextSaturation : jumpRingPicker ? cfg.jumpRingSaturation : cfg.colorSaturation;
         float brightnessValue = friendPicker ? cfg.friendColorValue
-            : textPicker ? cfg.moduleTextValue : cfg.colorValue;
+            : textPicker ? cfg.moduleTextValue : jumpRingPicker ? cfg.jumpRingValue : cfg.colorValue;
         int color = friendPicker ? VisualConfig.friendAccentColor()
-            : textPicker ? VisualConfig.moduleTextColor() : VisualConfig.accentColor();
+            : textPicker ? VisualConfig.moduleTextColor() : jumpRingPicker ? VisualConfig.jumpRingColor() : VisualConfig.accentColor();
         int x = pickerX();
         int y = pickerY();
         int width = pickerWidth();
         int height = pickerHeight();
 
         String pickerTitle = friendPicker ? "ЦВЕТ ОБВОДКИ ДРУЗЕЙ"
-            : textPicker ? "Цвет названий функций" : "ВЫБОР ЦВЕТА";
+            : textPicker ? "Цвет названий функций" : jumpRingPicker ? "ЦВЕТ КОЛЬЦА ПРЫЖКА" : "ВЫБОР ЦВЕТА";
         graphics.drawString(this.font, KotCodeLanguage.text(pickerTitle), x, y - 18, color, true);
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF080A0F);
 
@@ -770,6 +784,14 @@ public final class VisualConfigScreen extends Screen {
             case 1 -> KotCodeLanguage.text("КОЛЬЦО");
             case 2 -> KotCodeLanguage.text("ВВЕРХ");
             default -> KotCodeLanguage.text("ВСПЫШКА");
+        };
+    }
+
+    private static String jumpRingPatternName(int pattern) {
+        return switch (Math.floorMod(pattern, 3)) {
+            case 1 -> KotCodeLanguage.text("ЗВЕЗДА");
+            case 2 -> KotCodeLanguage.text("БАНАН");
+            default -> KotCodeLanguage.text("ЧЕРЕП");
         };
     }
 

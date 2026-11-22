@@ -54,6 +54,11 @@ public final class VisualConfig {
     // World / render
     public boolean playerTrail = false;
     public boolean jumpRings = false;
+    public int jumpRingPattern = 0; // 0 skull, 1 star, 2 banana
+    public float jumpRingScale = 1.0f;
+    public float jumpRingHue = 190.0f;
+    public float jumpRingSaturation = 0.88f;
+    public float jumpRingValue = 1.0f;
     public boolean skullJump = false;
     public boolean chinaHat = false;
     public boolean worldParticles = false;
@@ -90,6 +95,7 @@ public final class VisualConfig {
 
     // Movement
     public boolean autoSprint = false;
+    public boolean autoJump = false;
 
     // Theme
     public boolean glassMenu = false;
@@ -201,6 +207,16 @@ public final class VisualConfig {
         return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
+    public static int jumpRingColor() {
+        VisualConfig cfg = get();
+        float hue = Float.isFinite(cfg.jumpRingHue) ? cfg.jumpRingHue : 190.0f;
+        float saturation = Float.isFinite(cfg.jumpRingSaturation)
+            ? Math.max(0.0f, Math.min(1.0f, cfg.jumpRingSaturation)) : 0.88f;
+        float value = Float.isFinite(cfg.jumpRingValue)
+            ? Math.max(0.0f, Math.min(1.0f, cfg.jumpRingValue)) : 1.0f;
+        return hsvToRgb(hue, saturation, value);
+    }
+
     public static int friendAccentColor() {
         VisualConfig cfg = get();
         return hsvToRgb(cfg.friendColorHue, cfg.friendColorSaturation, cfg.friendColorValue);
@@ -259,6 +275,12 @@ public final class VisualConfig {
             INSTANCE.language = "ru";
         }
         if (INSTANCE.friends == null) INSTANCE.friends = new ArrayList<>();
+        INSTANCE.jumpRingPattern = Math.floorMod(INSTANCE.jumpRingPattern, 3);
+        if (!Float.isFinite(INSTANCE.jumpRingScale)) INSTANCE.jumpRingScale = 1.0f;
+        INSTANCE.jumpRingScale = Math.max(0.60f, Math.min(1.80f, INSTANCE.jumpRingScale));
+        if (!Float.isFinite(INSTANCE.jumpRingHue)) INSTANCE.jumpRingHue = 190.0f;
+        if (!Float.isFinite(INSTANCE.jumpRingSaturation)) INSTANCE.jumpRingSaturation = 0.88f;
+        if (!Float.isFinite(INSTANCE.jumpRingValue)) INSTANCE.jumpRingValue = 1.0f;
         if (INSTANCE.moduleTextHue == null) INSTANCE.moduleTextHue = 0.0f;
         if (INSTANCE.moduleTextSaturation == null) INSTANCE.moduleTextSaturation = 0.0f;
         if (INSTANCE.moduleTextValue == null) INSTANCE.moduleTextValue = 1.0f;

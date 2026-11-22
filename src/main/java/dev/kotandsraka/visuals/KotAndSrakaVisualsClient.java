@@ -49,6 +49,12 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
                 System.err.println("[KotAndSraka Visuals] Disabled one visual tick after an error: " + visualError);
             }
 
+            if (cfg.autoJump && client.screen == null && client.options.keyJump.isDown()
+                && client.player.isAlive() && client.player.onGround() && !client.player.isPassenger()
+                && !client.player.isFallFlying()) {
+                client.player.jumpFromGround();
+            }
+
             boolean ground = client.player.onGround();
             if (cfg.autoSprint && client.player.isAlive() && ground
                 && client.player.zza > 0.0F && !client.player.isSprinting()) {
@@ -66,16 +72,9 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
                 }
             }
 
-            if (cfg.jumpRings && !ground && wasOnGround) {
+            if (!ground && wasOnGround) {
                 VisualHud.onJump();
-                for (int i = 0; i < 32; i++) {
-                    double a = Math.PI * 2 * i / 32.0;
-                    client.level.addParticle(ParticleTypes.ENCHANT,
-                        client.player.getX() + Math.cos(a) * .7, client.player.getY() + .05,
-                        client.player.getZ() + Math.sin(a) * .7, 0, .08, 0);
-                }
-            } else if (!ground && wasOnGround) {
-                VisualHud.onJump();
+                if (cfg.jumpRings) WorldTrailRenderer.spawnJumpRing(client.player);
             }
             wasOnGround = ground;
         });

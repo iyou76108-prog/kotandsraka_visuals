@@ -11,7 +11,6 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
@@ -20,8 +19,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -33,13 +30,8 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Accent-colored translucent boxes rendered with depth testing disabled.
@@ -61,75 +53,10 @@ public final class XrayRenderer {
     private static BufferBuilder builder;
     private static MappableRingBuffer vertexBuffer;
     private static boolean failed;
-    private static final Map<UUID, GlowState> GLOWING_PLAYERS = new HashMap<>();
-
-    private record GlowState(Player player, boolean wasGlowing) {}
-
     private XrayRenderer() {}
 
     public static void register() {
         WorldRenderEvents.BEFORE_TRANSLUCENT.register(XrayRenderer::render);
-        ClientTickEvents.END_CLIENT_TICK.register(XrayRenderer::tickPlayerOutlines);
-    }
-
-    /**
-     * Uses Minecraft's entity-outline pass, which traces the rendered player model
-     * instead of drawing a box around its bounding hitbox.
-     */
-    private static void tickPlayerOutlines(Minecraft mc) {
-        if (mc.level == null || mc.player == null) {
-            restoreAllPlayerOutlines();
-            return;
-        }
-
-        VisualConfig cfg = VisualConfig.get();
-        boolean outlinePlayers = cfg.playerGlow;
-        boolean outlineFriends = cfg.friendGlow;
-        Set<UUID> seen = new HashSet<>();
-
-        for (Entity entity : mc.level.entitiesForRendering()) {
-            if (!(entity instanceof Player player) || player == mc.player) continue;
-
-            UUID id = player.getUUID();
-            seen.add(id);
-            boolean friend = outlineFriends && VisualConfig.isFriend(player.getName().getString());
-            boolean shouldGlow = (outlinePlayers || friend) && player.isAlive()
-                && player.distanceToSqr(mc.player) <= 64.0 * 64.0;
-
-            if (shouldGlow) {
-                GlowState state = GLOWING_PLAYERS.get(id);
-                if (state != null && state.player() != player) {
-                    state.player().setGlowingTag(state.wasGlowing());
-                    GLOWING_PLAYERS.remove(id);
-                    state = null;
-                }
-                if (state == null) {
-                    GLOWING_PLAYERS.put(id, new GlowState(player, player.isCurrentlyGlowing()));
-                }
-                player.setGlowingTag(true);
-            } else {
-                restorePlayerOutline(id);
-            }
-        }
-
-        GLOWING_PLAYERS.entrySet().removeIf(entry -> {
-            if (seen.contains(entry.getKey())) return false;
-            GlowState state = entry.getValue();
-            state.player().setGlowingTag(state.wasGlowing());
-            return true;
-        });
-    }
-
-    private static void restorePlayerOutline(UUID id) {
-        GlowState state = GLOWING_PLAYERS.remove(id);
-        if (state != null) state.player().setGlowingTag(state.wasGlowing());
-    }
-
-    private static void restoreAllPlayerOutlines() {
-        for (GlowState state : GLOWING_PLAYERS.values()) {
-            state.player().setGlowingTag(state.wasGlowing());
-        }
-        GLOWING_PLAYERS.clear();
     }
 
     private static void render(WorldRenderContext context) {

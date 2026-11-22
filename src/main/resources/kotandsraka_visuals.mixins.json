@@ -5,7 +5,8 @@
   "client": [
     "ItemInHandRendererMixin",
     "ScreenHudDragMixin",
-    "EntityOutlineColorMixin"
+    "EntityOutlineColorMixin",
+    "LivingEntityOutlineMixin"
   ],
   "injectors": {
     "defaultRequire": 1
