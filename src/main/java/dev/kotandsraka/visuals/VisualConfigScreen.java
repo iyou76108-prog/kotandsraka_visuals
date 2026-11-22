@@ -234,6 +234,7 @@ public final class VisualConfigScreen extends Screen {
                 add(list, "viewModel", "Положение рук", "Изменять положение и поворот рук от первого лица", c.viewModel, () -> c.viewModel = !c.viewModel);
                 add(list, "customSwing", "Настройка удара", "Настраивать скорость, силу и углы замаха", c.customSwing, () -> c.customSwing = !c.customSwing);
                 add(list, "autoClicker", "Автокликер", "Автоматически нажимать ЛКМ, пока удерживается кнопка атаки", c.autoClicker, () -> c.autoClicker = !c.autoClicker);
+                add(list, "autoBlockPlacement", "Укладка блоков", "Ускорять установку блоков, пока удерживается ПКМ", c.autoBlockPlacement, () -> c.autoBlockPlacement = !c.autoBlockPlacement);
             }
             case "Другое" -> {
                 add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
@@ -322,6 +323,11 @@ public final class VisualConfigScreen extends Screen {
                 addSlider("СКОРОСТЬ КЛИКОВ (CPS)", x, firstY, colWidth, 1, 20, 1,
                     Math.max(1.0f, Math.min(20.0f, c.autoClickerCps)),
                     v -> c.autoClickerCps = (float) v);
+            }
+            case "autoBlockPlacement" -> {
+                addSlider("СКОРОСТЬ УКЛАДКИ (БЛОК/С)", x, firstY, colWidth, 1, 20, 1,
+                    Math.max(1.0f, Math.min(20.0f, c.autoBlockPlacementSpeed)),
+                    v -> c.autoBlockPlacementSpeed = (float) v);
             }
             case "activeModulesHud" -> {
                 addSlider("МАСШТАБ СПИСКА ФУНКЦИЙ", x, firstY, colWidth, 0.40, 1.0, 0.05,

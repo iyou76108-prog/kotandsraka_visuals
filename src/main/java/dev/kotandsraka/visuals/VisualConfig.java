@@ -49,6 +49,8 @@ public final class VisualConfig {
     public boolean customFire = false;
     public boolean autoClicker = false;
     public float autoClickerCps = 10.0f;
+    public boolean autoBlockPlacement = false;
+    public float autoBlockPlacementSpeed = 8.0f;
     // Motion blur needs temporal framebuffer history; deliberately left disabled until
     // the custom post-processing pass is added and verified.
     public boolean motionBlur = false;

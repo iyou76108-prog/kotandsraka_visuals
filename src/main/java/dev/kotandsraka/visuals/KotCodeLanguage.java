@@ -77,6 +77,9 @@ public final class KotCodeLanguage {
         put("Автокликер", "Auto Clicker");
         put("Автоматически нажимать ЛКМ, пока удерживается кнопка атаки", "Automatically click LMB while the attack button is held");
         put("СКОРОСТЬ КЛИКОВ (CPS)", "CLICK RATE (CPS)");
+        put("Укладка блоков", "Block Placement");
+        put("Ускорять установку блоков, пока удерживается ПКМ", "Place blocks faster while the right mouse button is held");
+        put("СКОРОСТЬ УКЛАДКИ (БЛОК/С)", "PLACEMENT SPEED (BLOCKS/S)");
         put("HUD цели", "Target HUD");
         put("Имя цели и полоска здоровья", "Target name and health bar");
         put("HUD брони", "Armor HUD");

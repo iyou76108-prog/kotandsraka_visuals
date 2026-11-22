@@ -473,6 +473,7 @@ public final class VisualHud {
         if (c.viewModel) list.add(KotCodeLanguage.text("Положение рук"));
         if (c.customSwing) list.add(KotCodeLanguage.text("Настройка удара"));
         if (c.autoClicker) list.add(KotCodeLanguage.text("Автокликер"));
+        if (c.autoBlockPlacement) list.add(KotCodeLanguage.text("Укладка блоков"));
         if (c.customFire) list.add(KotCodeLanguage.text("Огонь от первого лица"));
         if (c.playerGlow) list.add(KotCodeLanguage.text("Обводка силуэта игроков"));
         if (c.friendGlow) list.add(KotCodeLanguage.text("Обводка друзей"));

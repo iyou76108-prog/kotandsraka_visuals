@@ -9,13 +9,18 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.particles.ParticleTypes;
 import org.lwjgl.glfw.GLFW;
 
 public final class KotAndSrakaVisualsClient implements ClientModInitializer {
     public static KeyMapping OPEN_MENU;
     private static long nextAutoClickNanos;
+    private static long nextAutoBlockPlaceNanos;
     private static boolean wasOnGround = true;
     private static boolean rightShiftWasDown = false;
 
@@ -42,6 +47,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
 
             VisualConfig cfg = VisualConfig.get();
             tickAutoClicker(client, cfg);
+            tickAutoBlockPlacement(client, cfg);
             try {
                 VisualHud.tick();
                 WorldTrailRenderer.tick();
@@ -90,6 +96,44 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
         });
 
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "hud"), VisualHud::render);
+    }
+
+    private static void tickAutoBlockPlacement(net.minecraft.client.Minecraft client, VisualConfig cfg) {
+        boolean active = cfg.autoBlockPlacement && client.screen == null
+            && client.player != null && client.player.isAlive()
+            && !client.player.isSpectator() && client.options.keyUse.isDown()
+            && client.gameMode != null && client.hitResult instanceof BlockHitResult;
+
+        if (!active) {
+            nextAutoBlockPlaceNanos = 0L;
+            return;
+        }
+
+        BlockHitResult blockHit = (BlockHitResult) client.hitResult;
+        if (blockHit.getType() != HitResult.Type.BLOCK) {
+            nextAutoBlockPlaceNanos = 0L;
+            return;
+        }
+
+        InteractionHand hand;
+        if (client.player.getMainHandItem().getItem() instanceof BlockItem) {
+            hand = InteractionHand.MAIN_HAND;
+        } else if (client.player.getOffhandItem().getItem() instanceof BlockItem) {
+            hand = InteractionHand.OFF_HAND;
+        } else {
+            nextAutoBlockPlaceNanos = 0L;
+            return;
+        }
+
+        int blocksPerSecond = Math.max(1, Math.min(20, Math.round(cfg.autoBlockPlacementSpeed)));
+        long intervalNanos = 1_000_000_000L / blocksPerSecond;
+        long now = System.nanoTime();
+        if (nextAutoBlockPlaceNanos == 0L || now >= nextAutoBlockPlaceNanos) {
+            // Vanilla's interaction manager performs the normal client prediction
+            // and sends the regular block-use action to the server.
+            client.gameMode.useItemOn(client.player, hand, blockHit);
+            nextAutoBlockPlaceNanos = now + intervalNanos;
+        }
     }
 
     private static void tickAutoClicker(net.minecraft.client.Minecraft client, VisualConfig cfg) {
