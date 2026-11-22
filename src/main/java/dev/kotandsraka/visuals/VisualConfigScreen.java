@@ -536,13 +536,14 @@ public final class VisualConfigScreen extends Screen {
         }
 
         @Override
-        protected void renderString(GuiGraphics graphics, net.minecraft.client.gui.Font font, int color) {
+        protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             float scale = VisualConfig.moduleTextScale();
             graphics.pose().pushMatrix();
             graphics.pose().translate(getX() + getWidth() / 2.0f,
-                getY() + (getHeight() - font.lineHeight()) / 2.0f);
+                getY() + (getHeight() - 8) / 2.0f);
             graphics.pose().scale(scale, scale);
-            graphics.drawCenteredString(font, getMessage(), 0, 0, VisualConfig.moduleTextColor());
+            graphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), 0, 0,
+                VisualConfig.moduleTextColor());
             graphics.pose().popMatrix();
         }
     }
