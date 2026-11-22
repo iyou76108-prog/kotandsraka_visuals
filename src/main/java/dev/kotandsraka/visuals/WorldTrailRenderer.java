@@ -9,11 +9,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
@@ -295,56 +296,115 @@ public final class WorldTrailRenderer {
         return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
     }
 
+    /**
+     * Draws a preview from the item currently held by the player. It deliberately
+     * does not inspect live projectile entities: the path is visible before launch.
+     */
     private static void renderProjectileTrajectories(Minecraft mc, PoseStack.Pose pose, VertexConsumer line) {
-        int accent = VisualConfig.accentColor();
-        for (Entity entity : mc.level.entitiesForRendering()) {
-            if (!(entity instanceof Projectile projectile) || projectile.getOwner() != mc.player) continue;
+        Player player = mc.player;
+        ItemStack stack = getTrajectoryStack(player);
+        if (stack.isEmpty()) return;
 
-            EntityType<?> type = entity.getType();
-            double gravity;
-            double drag;
-            float width;
-            if (type == EntityType.ENDER_PEARL) {
-                gravity = 0.03;
-                drag = 0.99;
-                width = 1.65f;
-            } else if (type == EntityType.ARROW || type == EntityType.SPECTRAL_ARROW) {
-                gravity = 0.05;
-                drag = 0.99;
-                width = 1.5f;
-            } else if (type == EntityType.TRIDENT) {
-                gravity = 0.05;
-                drag = 0.99;
-                width = 1.9f;
-            } else if (type == EntityType.WIND_CHARGE) {
-                // Wind charges fly with very little vertical drop and lose speed quickly.
-                gravity = 0.0;
-                drag = 0.95;
-                width = 1.8f;
-            } else {
-                continue;
-            }
+        double speed;
+        double gravity;
+        double drag;
+        float width;
 
-            renderProjectilePrediction(mc, projectile, pose, line, gravity, drag, width, accent);
+        if (stack.is(Items.ENDER_PEARL)) {
+            speed = 1.5;
+            gravity = 0.03;
+            drag = 0.99;
+            width = 1.65f;
+        } else if (stack.is(Items.WIND_CHARGE)) {
+            speed = 1.5;
+            gravity = 0.0;
+            drag = 0.95;
+            width = 1.8f;
+        } else if (stack.is(Items.BOW)) {
+            if (!player.isUsingItem() || !player.getUseItem().is(Items.BOW)) return;
+            float pull = BowItem.getPowerForTime(player.getTicksUsingItem());
+            if (pull < 0.08f) return;
+            speed = 3.0 * pull;
+            gravity = 0.05;
+            drag = 0.99;
+            width = 1.5f;
+        } else if (stack.is(Items.CROSSBOW)) {
+            boolean charging = player.isUsingItem() && player.getUseItem().is(Items.CROSSBOW);
+            if (!charging && !CrossbowItem.isCharged(stack)) return;
+            speed = 3.15;
+            gravity = 0.05;
+            drag = 0.99;
+            width = 1.6f;
+        } else if (stack.is(Items.TRIDENT)) {
+            if (!player.isUsingItem() || !player.getUseItem().is(Items.TRIDENT)
+                || player.getTicksUsingItem() < 10) return;
+            speed = 2.5;
+            gravity = 0.05;
+            drag = 0.99;
+            width = 1.9f;
+        } else {
+            return;
         }
+
+        Vec3 direction = player.getViewVector(1.0f).normalize();
+        Vec3 position = player.getEyePosition().add(0.0, -0.1, 0.0);
+        Vec3 playerMotion = player.getDeltaMovement();
+        // Thrown projectiles inherit horizontal player motion; vertical motion
+        // is inherited only while the player is airborne.
+        Vec3 inheritedMotion = new Vec3(playerMotion.x,
+            player.onGround() ? 0.0 : playerMotion.y, playerMotion.z);
+        Vec3 velocity = direction.scale(speed).add(inheritedMotion);
+        renderProjectilePrediction(mc, position, velocity, pose, line, gravity, drag, width,
+            VisualConfig.accentColor());
     }
 
-    private static void renderProjectilePrediction(Minecraft mc, Projectile projectile,
+    private static ItemStack getTrajectoryStack(Player player) {
+        if (player.isUsingItem() && isTrajectoryItem(player.getUseItem())) {
+            return canPreviewTrajectory(player.getUseItem(), player) ? player.getUseItem() : ItemStack.EMPTY;
+        }
+
+        ItemStack mainHand = player.getMainHandItem();
+        if (canPreviewTrajectory(mainHand, player)) return mainHand;
+
+        ItemStack offHand = player.getOffhandItem();
+        return canPreviewTrajectory(offHand, player) ? offHand : ItemStack.EMPTY;
+    }
+
+    private static boolean isTrajectoryItem(ItemStack stack) {
+        return stack.is(Items.ENDER_PEARL) || stack.is(Items.WIND_CHARGE)
+            || stack.is(Items.BOW) || stack.is(Items.CROSSBOW) || stack.is(Items.TRIDENT);
+    }
+
+    private static boolean canPreviewTrajectory(ItemStack stack, Player player) {
+        if (stack.is(Items.ENDER_PEARL) || stack.is(Items.WIND_CHARGE)) return true;
+        if (stack.is(Items.BOW)) {
+            return player.isUsingItem() && player.getUseItem().is(Items.BOW);
+        }
+        if (stack.is(Items.CROSSBOW)) {
+            return (player.isUsingItem() && player.getUseItem().is(Items.CROSSBOW))
+                || CrossbowItem.isCharged(stack);
+        }
+        if (stack.is(Items.TRIDENT)) {
+            return player.isUsingItem() && player.getUseItem().is(Items.TRIDENT)
+                && player.getTicksUsingItem() >= 10;
+        }
+        return false;
+    }
+
+    private static void renderProjectilePrediction(Minecraft mc, Vec3 position, Vec3 velocity,
                                                    PoseStack.Pose pose, VertexConsumer line,
                                                    double gravity, double drag, float width, int accent) {
-        Vec3 position = projectile.position();
-        Vec3 velocity = projectile.getDeltaMovement();
         if (velocity.lengthSqr() < 0.0001) return;
 
         List<Vec3> points = new ArrayList<>(96);
         points.add(position);
         BlockPos landingBlock = null;
 
-        // Simulate one tick at a time and raycast every segment against real block collision shapes.
+        // Simulate the shot ahead of time and raycast each segment against actual block shapes.
         for (int tick = 0; tick < 120; tick++) {
             Vec3 next = position.add(velocity);
             BlockHitResult hit = mc.level.clip(new ClipContext(position, next,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, projectile));
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
 
             if (hit.getType() == HitResult.Type.BLOCK) {
                 points.add(hit.getLocation());
