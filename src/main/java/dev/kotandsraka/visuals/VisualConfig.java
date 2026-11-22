@@ -92,6 +92,7 @@ public final class VisualConfig {
     public Float moduleTextHue = 0.0f;
     public Float moduleTextSaturation = 0.0f;
     public Float moduleTextValue = 1.0f;
+    public float moduleTextScale = 1.0f;
 
     // Movement
     public boolean autoSprint = false;
@@ -222,6 +223,12 @@ public final class VisualConfig {
         return hsvToRgb(cfg.friendColorHue, cfg.friendColorSaturation, cfg.friendColorValue);
     }
 
+    public static float moduleTextScale() {
+        float scale = get().moduleTextScale;
+        if (!Float.isFinite(scale) || scale <= 0.0f) return 1.0f;
+        return Math.max(0.65f, Math.min(1.60f, scale));
+    }
+
     public static int moduleTextColor() {
         VisualConfig cfg = get();
         float hue = cfg.moduleTextHue == null ? 0.0f : cfg.moduleTextHue;
@@ -284,6 +291,7 @@ public final class VisualConfig {
         if (INSTANCE.moduleTextHue == null) INSTANCE.moduleTextHue = 0.0f;
         if (INSTANCE.moduleTextSaturation == null) INSTANCE.moduleTextSaturation = 0.0f;
         if (INSTANCE.moduleTextValue == null) INSTANCE.moduleTextValue = 1.0f;
+        INSTANCE.moduleTextScale = clampModuleTextScale(INSTANCE.moduleTextScale);
         INSTANCE.menuOpacity = clampMenuOpacity(INSTANCE.menuOpacity);
         save();
     }
@@ -299,6 +307,11 @@ public final class VisualConfig {
     public static void reset() {
         INSTANCE = new VisualConfig();
         save();
+    }
+
+    private static float clampModuleTextScale(float value) {
+        if (!Float.isFinite(value) || value <= 0.0f) return 1.0f;
+        return Math.max(0.65f, Math.min(1.60f, value));
     }
 
     private static float clampMenuOpacity(float value) {
@@ -372,6 +385,7 @@ public final class VisualConfig {
         if (profile.moduleTextHue == null) profile.moduleTextHue = 0.0f;
         if (profile.moduleTextSaturation == null) profile.moduleTextSaturation = 0.0f;
         if (profile.moduleTextValue == null) profile.moduleTextValue = 1.0f;
+        profile.moduleTextScale = clampModuleTextScale(profile.moduleTextScale);
         profile.menuOpacity = clampMenuOpacity(profile.menuOpacity);
         return profile;
     }

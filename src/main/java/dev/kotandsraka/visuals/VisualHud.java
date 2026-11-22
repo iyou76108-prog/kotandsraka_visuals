@@ -251,6 +251,16 @@ public final class VisualHud {
         STAT_SPEED, STAT_TOTEMS, STAT_CLOCK, STAT_DIRECTION
     };
 
+    private static void drawScaledModuleText(GuiGraphics graphics, Minecraft mc, String text,
+                                                  float x, float y, int color, boolean shadow) {
+        float scale = VisualConfig.moduleTextScale();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
+        graphics.drawString(mc.font, text, 0, 0, color, shadow);
+        graphics.pose().popMatrix();
+    }
+
     private static void renderInfoHud(GuiGraphics graphics, Minecraft mc, VisualConfig cfg) {
         for (int id : STAT_IDS) {
             if (!isStatEnabled(cfg, id)) continue;
@@ -265,13 +275,16 @@ public final class VisualHud {
             graphics.fill(x + 2, y, x + width, y + 2, VisualConfig.accentColor());
             int split = text.indexOf("  ");
             if (split > 0) {
-                graphics.drawString(mc.font, text.substring(0, split), x + 7, y + 6,
+                String label = text.substring(0, split);
+                String value = text.substring(split + 2);
+                drawScaledModuleText(graphics, mc, label, x + 7, y + 6,
                     VisualConfig.moduleTextColor(), false);
-                graphics.drawString(mc.font, text.substring(split + 2),
-                    x + 7 + mc.font.width(text.substring(0, split)) + 6, y + 6,
-                    0xFFFFFFFF, false);
+                int scaledLabelWidth = (int) Math.ceil(mc.font.width(label) * VisualConfig.moduleTextScale());
+                graphics.drawString(mc.font, value,
+                    x + 7 + scaledLabelWidth + 6, y + 6, 0xFFFFFFFF, false);
             } else {
-                graphics.drawString(mc.font, text, x + 7, y + 6, VisualConfig.moduleTextColor(), false);
+                drawScaledModuleText(graphics, mc, text, x + 7, y + 6,
+                    VisualConfig.moduleTextColor(), false);
             }
         }
     }
@@ -379,7 +392,15 @@ public final class VisualHud {
 
     public static int statWidth(Minecraft mc, VisualConfig cfg, int id) {
         String text = statText(mc, cfg, id);
-        return Math.max(48, mc.font.width(text) + 14);
+        int split = text == null ? -1 : text.indexOf("  ");
+        if (split > 0) {
+            String label = text.substring(0, split);
+            String value = text.substring(split + 2);
+            int labelWidth = (int) Math.ceil(mc.font.width(label) * VisualConfig.moduleTextScale());
+            return Math.max(48, labelWidth + 6 + mc.font.width(value) + 14);
+        }
+        return Math.max(48, (int) Math.ceil(mc.font.width(text == null ? "" : text)
+            * VisualConfig.moduleTextScale()) + 14);
     }
 
     public static int statHeight() {
@@ -415,15 +436,24 @@ public final class VisualHud {
         int panelWidth = activeModulesBaseWidth(mc, modules);
         int panelHeight = activeModulesBaseHeight(modules.size());
         int textColor = VisualConfig.moduleTextColor();
+        float textScale = VisualConfig.moduleTextScale();
 
         g.pose().pushMatrix();
         g.pose().translate((float) x, (float) y);
         g.pose().scale(scale, scale);
         g.fill(0, 0, panelWidth, panelHeight, VisualConfig.panelColor());
         g.fill(0, 0, panelWidth, 2, VisualConfig.accentColor());
-        g.drawString(mc.font, "KOTCODE", 6, 6, textColor, false);
+        g.pose().pushMatrix();
+        g.pose().translate(6.0f, 6.0f);
+        g.pose().scale(textScale, textScale);
+        g.drawString(mc.font, "KOTCODE", 0, 0, textColor, false);
+        g.pose().popMatrix();
         for (int i = 0; i < modules.size(); i++) {
-            g.drawString(mc.font, modules.get(i), 6, 19 + i * 11, textColor, false);
+            g.pose().pushMatrix();
+            g.pose().translate(6.0f, 19.0f + i * 11.0f);
+            g.pose().scale(textScale, textScale);
+            g.drawString(mc.font, modules.get(i), 0, 0, textColor, false);
+            g.pose().popMatrix();
         }
         g.pose().popMatrix();
     }
@@ -473,11 +503,11 @@ public final class VisualHud {
     private static int activeModulesBaseWidth(Minecraft mc, List<String> modules) {
         int width = mc.font.width("KOTCODE");
         for (String module : modules) width = Math.max(width, mc.font.width(module));
-        return width + 14;
+        return (int) Math.ceil(width * VisualConfig.moduleTextScale()) + 14;
     }
 
     private static int activeModulesBaseHeight(int moduleCount) {
-        return moduleCount * 12 + 20;
+        return (int) Math.ceil((moduleCount * 11.0f + 20.0f) * VisualConfig.moduleTextScale());
     }
 
     public static int activeModulesWidth(Minecraft mc, VisualConfig cfg) {
@@ -539,7 +569,8 @@ public final class VisualHud {
         graphics.fill(x, y, x + width, y + height, VisualConfig.panelColor());
         graphics.fill(x, y, x + width, y + 2, VisualConfig.accentColor());
         graphics.fill(x, y + 2, x + 2, y + height, VisualConfig.accentColor());
-        graphics.drawString(mc.font, KotCodeLanguage.text("ЭФФЕКТЫ"), x + 7, y + 6, VisualConfig.moduleTextColor(), true);
+        drawScaledModuleText(graphics, mc, KotCodeLanguage.text("ЭФФЕКТЫ"), x + 7, y + 6,
+            VisualConfig.moduleTextColor(), true);
         for (int i = 0; i < lines.size(); i++) {
             graphics.drawString(mc.font, lines.get(i), x + 7, y + 19 + i * 12,
                 0xFFF0F0F4, false);
@@ -681,8 +712,11 @@ public final class VisualHud {
         g.fill(x, y, x + w, y + 42, VisualConfig.panelColor());
         g.fill(x, y, x + w, y + 2, VisualConfig.accentColor());
         String name = target == null ? KotCodeLanguage.text("Предпросмотр HUD цели") : target.getName().getString();
-        g.drawString(mc.font, name, x + 7, y + 6,
-            target == null ? VisualConfig.moduleTextColor() : 0xFFFFFF, true);
+        if (target == null) {
+            drawScaledModuleText(g, mc, name, x + 7, y + 6, VisualConfig.moduleTextColor(), true);
+        } else {
+            g.drawString(mc.font, name, x + 7, y + 6, 0xFFFFFF, true);
+        }
         float health = target == null ? 0.75f : Math.max(0.0F, target.getHealth());
         float max = target == null ? 1.0f : Math.max(1.0F, target.getMaxHealth());
         int bar = (int) ((w - 14) * Math.min(1.0F, health / max));

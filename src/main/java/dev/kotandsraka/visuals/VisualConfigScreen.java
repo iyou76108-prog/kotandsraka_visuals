@@ -158,11 +158,14 @@ public final class VisualConfigScreen extends Screen {
             int rowHeight = Math.max(18, moduleRowHeight - 3);
             final String id = feature.id();
 
-            addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.name())).withStyle(style -> style.withItalic(true).withColor(VisualConfig.moduleTextColor())), b -> {
-                selectedId = id;
-                rememberSelection();
-                rebuild();
-            }).bounds(modulesX() + 6, y, modulesWidth() - 57, rowHeight).build());
+            addRenderableWidget(new ModuleNameButton(
+                modulesX() + 6, y, modulesWidth() - 57, rowHeight,
+                Component.literal(KotCodeLanguage.text(feature.name())).withStyle(style -> style.withItalic(true)),
+                b -> {
+                    selectedId = id;
+                    rememberSelection();
+                    rebuild();
+                }));
 
             if (feature.toggle() != null) {
                 addRenderableWidget(Button.builder(Component.literal(KotCodeLanguage.text(feature.enabled() ? "ВКЛ" : "ВЫКЛ")), b -> {
@@ -251,7 +254,7 @@ public final class VisualConfigScreen extends Screen {
             case "Настройки" -> {
                 list.add(new Feature("theme", "Оформление", "Цветовой акцент и внешний вид меню", false, null));
                 list.add(new Feature("moduleTextColor", "Цвет названий функций",
-                    "Отдельный цвет текста названий в Shift и HUD активных модулей", false, null));
+                    "Единый цвет и размер названий функций в меню и HUD", false, null));
             }
             case "Конфиги" -> {
                 list.add(new Feature("configManager", "Управление конфигами",
@@ -386,6 +389,10 @@ public final class VisualConfigScreen extends Screen {
                 addSlider("ТОЛЩИНА", x, firstY + 68, colWidth, 1, 6, 1, c.crosshairThickness,
                     v -> c.crosshairThickness = (int) Math.round(v));
             }
+            case "moduleTextColor" -> {
+                addSlider("РАЗМЕР НАЗВАНИЙ ФУНКЦИЙ", x, firstY, colWidth, 0.65, 1.60, 0.05,
+                    c.moduleTextScale, v -> c.moduleTextScale = (float) v);
+            }
             case "theme" -> {
                 addSlider("ПРОЗРАЧНОСТЬ SHIFT", x, firstY + 205, colWidth, 0.20, 1.0, 0.01,
                     c.menuOpacity, v -> c.menuOpacity = (float) v);
@@ -510,6 +517,34 @@ public final class VisualConfigScreen extends Screen {
                             double min, double max, double step, double initial,
                             DoubleConsumer setter) {
         addRenderableWidget(new ValueSlider(x, y, width, label, min, max, step, initial, setter));
+    }
+
+    private static void drawScaledModuleText(GuiGraphics graphics, String text,
+                                              float x, float y, int color, boolean shadow) {
+        float scale = VisualConfig.moduleTextScale();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
+        graphics.drawString(Minecraft.getInstance().font, text, 0, 0, color, shadow);
+        graphics.pose().popMatrix();
+    }
+
+    private static final class ModuleNameButton extends Button {
+        private ModuleNameButton(int x, int y, int width, int height,
+                                 Component message, Button.OnPress onPress) {
+            super(x, y, width, height, message, onPress, Button.DEFAULT_NARRATION);
+        }
+
+        @Override
+        protected void renderString(GuiGraphics graphics, net.minecraft.client.gui.Font font, int color) {
+            float scale = VisualConfig.moduleTextScale();
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(getX() + getWidth() / 2.0f,
+                getY() + (getHeight() - font.lineHeight()) / 2.0f);
+            graphics.pose().scale(scale, scale);
+            graphics.drawCenteredString(font, getMessage(), 0, 0, VisualConfig.moduleTextColor());
+            graphics.pose().popMatrix();
+        }
     }
 
     private static final class ValueSlider extends AbstractSliderButton {
@@ -859,8 +894,8 @@ public final class VisualConfigScreen extends Screen {
 
         Feature selected = findSelected(features);
         if (selected != null) {
-            g.drawString(this.font, KotCodeLanguage.text(category).toUpperCase() + "  /  " + KotCodeLanguage.text(selected.name()),
-                sx + 12, t + 62, VisualConfig.moduleTextColor(), true);
+            drawScaledModuleText(g, KotCodeLanguage.text(category).toUpperCase() + "  /  "
+                + KotCodeLanguage.text(selected.name()), sx + 12, t + 62, VisualConfig.moduleTextColor(), true);
             g.drawString(this.font, KotCodeLanguage.text(selected.description()), sx + 12, t + 83, MUTED, false);
             g.fill(sx + 12, t + 99, sx + sw - 12, t + 100, 0x664D5360);
             g.drawString(this.font, KotCodeLanguage.text("НАСТРОЙКИ"), sx + 12, t + 111, VisualConfig.accentColor(), true);
@@ -884,7 +919,7 @@ public final class VisualConfigScreen extends Screen {
             } else if (selected.id().equals("moduleTextColor")) {
                 g.drawString(this.font, KotCodeLanguage.text("ПРИМЕР НАЗВАНИЙ ФУНКЦИЙ"),
                     sx + 12, t + 133, MUTED, false);
-                g.drawString(this.font, KotCodeLanguage.text("Шляпа  •  Авто-бег  •  След игрока"),
+                drawScaledModuleText(g, KotCodeLanguage.text("Шляпа  •  Авто-бег  •  След игрока"),
                     sx + 12, t + 151, VisualConfig.moduleTextColor(), true);
             } else if (selected.toggle() == null) {
                 g.drawString(this.font, KotCodeLanguage.text("Выберите параметр ниже."), sx + 12, t + 128, MUTED, false);

@@ -205,8 +205,13 @@ public final class HudLayoutEditor {
         graphics.fill(x - 2, y, x, y + height, color);
         graphics.fill(x + width, y, x + width + 2, y + height, color);
         graphics.fill(x, y - 13, x + Math.min(width, 58), y - 2, 0xD0203346);
-        graphics.drawString(Minecraft.getInstance().font, label, x + 3, y - 11,
+        graphics.pose().pushMatrix();
+        float textScale = VisualConfig.moduleTextScale();
+        graphics.pose().translate(x + 3.0f, y - 11.0f);
+        graphics.pose().scale(textScale, textScale);
+        graphics.drawString(Minecraft.getInstance().font, label, 0, 0,
             VisualConfig.moduleTextColor(), false);
+        graphics.pose().popMatrix();
     }
 
     private static boolean inside(double mouseX, double mouseY, int x, int y, int width, int height) {
