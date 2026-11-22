@@ -41,7 +41,7 @@ public final class WorldTrailRenderer {
     public static void spawnJumpRing(Player player) {
         if (player == null) return;
         double groundY = player.blockPosition().getY();
-        Vec3 center = new Vec3(player.getX(), groundY + 1.018, player.getZ());
+        Vec3 center = new Vec3(player.getX(), groundY + 0.018, player.getZ());
         if (JUMP_RINGS.size() >= 8) JUMP_RINGS.removeFirst();
         JUMP_RINGS.addLast(new JumpRing(center, player.tickCount));
     }
