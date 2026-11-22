@@ -233,6 +233,7 @@ public final class VisualConfigScreen extends Screen {
             case "Игрок" -> {
                 add(list, "viewModel", "Положение рук", "Изменять положение и поворот рук от первого лица", c.viewModel, () -> c.viewModel = !c.viewModel);
                 add(list, "customSwing", "Настройка удара", "Настраивать скорость, силу и углы замаха", c.customSwing, () -> c.customSwing = !c.customSwing);
+                add(list, "autoClicker", "Автокликер", "Автоматически нажимать ЛКМ, пока удерживается кнопка атаки", c.autoClicker, () -> c.autoClicker = !c.autoClicker);
             }
             case "Другое" -> {
                 add(list, "targetHud", "HUD цели", "Имя цели и полоска здоровья", c.targetHud, () -> c.targetHud = !c.targetHud);
@@ -316,6 +317,11 @@ public final class VisualConfigScreen extends Screen {
                 addSlider("ГРОМКОСТЬ", x, firstY + 34, colWidth, 0.10, 1.0, 0.05, c.hitSoundVolume,
                     v -> c.hitSoundVolume = (float) v);
                 addSetting("ПРОСЛУШАТЬ ЗВУК", x, firstY + 68, colWidth, VisualHud::previewHitSound);
+            }
+            case "autoClicker" -> {
+                addSlider("СКОРОСТЬ КЛИКОВ (CPS)", x, firstY, colWidth, 1, 20, 1,
+                    Math.max(1.0f, Math.min(20.0f, c.autoClickerCps)),
+                    v -> c.autoClickerCps = (float) v);
             }
             case "activeModulesHud" -> {
                 addSlider("МАСШТАБ СПИСКА ФУНКЦИЙ", x, firstY, colWidth, 0.40, 1.0, 0.05,

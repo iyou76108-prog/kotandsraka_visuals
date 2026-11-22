@@ -74,6 +74,9 @@ public final class KotCodeLanguage {
         put("Изменять положение и поворот рук от первого лица", "Change first-person hand position and rotation");
         put("Настройка удара", "Swing Settings");
         put("Настраивать скорость, силу и углы замаха", "Adjust swing speed, strength and angles");
+        put("Автокликер", "Auto Clicker");
+        put("Автоматически нажимать ЛКМ, пока удерживается кнопка атаки", "Automatically click LMB while the attack button is held");
+        put("СКОРОСТЬ КЛИКОВ (CPS)", "CLICK RATE (CPS)");
         put("HUD цели", "Target HUD");
         put("Имя цели и полоска здоровья", "Target name and health bar");
         put("HUD брони", "Armor HUD");

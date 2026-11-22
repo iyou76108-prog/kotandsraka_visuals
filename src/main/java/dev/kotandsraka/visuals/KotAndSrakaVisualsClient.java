@@ -15,6 +15,7 @@ import org.lwjgl.glfw.GLFW;
 
 public final class KotAndSrakaVisualsClient implements ClientModInitializer {
     public static KeyMapping OPEN_MENU;
+    private static long nextAutoClickNanos;
     private static boolean wasOnGround = true;
     private static boolean rightShiftWasDown = false;
 
@@ -40,6 +41,7 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
             if (client.player == null || client.level == null) return;
 
             VisualConfig cfg = VisualConfig.get();
+            tickAutoClicker(client, cfg);
             try {
                 VisualHud.tick();
                 WorldTrailRenderer.tick();
@@ -88,5 +90,24 @@ public final class KotAndSrakaVisualsClient implements ClientModInitializer {
         });
 
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("kotandsraka_visuals", "hud"), VisualHud::render);
+    }
+
+    private static void tickAutoClicker(net.minecraft.client.Minecraft client, VisualConfig cfg) {
+        boolean active = cfg.autoClicker && client.screen == null
+            && client.player != null && client.player.isAlive()
+            && !client.player.isSpectator() && client.options.keyAttack.isDown();
+
+        if (!active) {
+            nextAutoClickNanos = 0L;
+            return;
+        }
+
+        int cps = Math.max(1, Math.min(20, Math.round(cfg.autoClickerCps)));
+        long intervalNanos = 1_000_000_000L / cps;
+        long now = System.nanoTime();
+        if (nextAutoClickNanos == 0L || now >= nextAutoClickNanos) {
+            ((dev.kotandsraka.visuals.mixin.MinecraftAttackInvoker) (Object) client).kotcode$startAttack();
+            nextAutoClickNanos = now + intervalNanos;
+        }
     }
 }
