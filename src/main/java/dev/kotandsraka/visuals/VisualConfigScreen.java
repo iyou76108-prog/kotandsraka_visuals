@@ -860,7 +860,7 @@ public final class VisualConfigScreen extends Screen {
         Feature selected = findSelected(features);
         if (selected != null) {
             g.drawString(this.font, KotCodeLanguage.text(category).toUpperCase() + "  /  " + KotCodeLanguage.text(selected.name()),
-                sx + 12, t + 62, TEXT, true);
+                sx + 12, t + 62, VisualConfig.moduleTextColor(), true);
             g.drawString(this.font, KotCodeLanguage.text(selected.description()), sx + 12, t + 83, MUTED, false);
             g.fill(sx + 12, t + 99, sx + sw - 12, t + 100, 0x664D5360);
             g.drawString(this.font, KotCodeLanguage.text("НАСТРОЙКИ"), sx + 12, t + 111, VisualConfig.accentColor(), true);

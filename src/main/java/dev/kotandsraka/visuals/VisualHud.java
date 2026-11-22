@@ -266,12 +266,12 @@ public final class VisualHud {
             int split = text.indexOf("  ");
             if (split > 0) {
                 graphics.drawString(mc.font, text.substring(0, split), x + 7, y + 6,
-                    VisualConfig.mutedColor(), false);
+                    VisualConfig.moduleTextColor(), false);
                 graphics.drawString(mc.font, text.substring(split + 2),
                     x + 7 + mc.font.width(text.substring(0, split)) + 6, y + 6,
                     0xFFFFFFFF, false);
             } else {
-                graphics.drawString(mc.font, text, x + 7, y + 6, 0xFFFFFFFF, false);
+                graphics.drawString(mc.font, text, x + 7, y + 6, VisualConfig.moduleTextColor(), false);
             }
         }
     }
@@ -539,7 +539,7 @@ public final class VisualHud {
         graphics.fill(x, y, x + width, y + height, VisualConfig.panelColor());
         graphics.fill(x, y, x + width, y + 2, VisualConfig.accentColor());
         graphics.fill(x, y + 2, x + 2, y + height, VisualConfig.accentColor());
-        graphics.drawString(mc.font, KotCodeLanguage.text("ЭФФЕКТЫ"), x + 7, y + 6, VisualConfig.accentColor(), true);
+        graphics.drawString(mc.font, KotCodeLanguage.text("ЭФФЕКТЫ"), x + 7, y + 6, VisualConfig.moduleTextColor(), true);
         for (int i = 0; i < lines.size(); i++) {
             graphics.drawString(mc.font, lines.get(i), x + 7, y + 19 + i * 12,
                 0xFFF0F0F4, false);
@@ -681,7 +681,8 @@ public final class VisualHud {
         g.fill(x, y, x + w, y + 42, VisualConfig.panelColor());
         g.fill(x, y, x + w, y + 2, VisualConfig.accentColor());
         String name = target == null ? KotCodeLanguage.text("Предпросмотр HUD цели") : target.getName().getString();
-        g.drawString(mc.font, name, x + 7, y + 6, 0xFFFFFF, true);
+        g.drawString(mc.font, name, x + 7, y + 6,
+            target == null ? VisualConfig.moduleTextColor() : 0xFFFFFF, true);
         float health = target == null ? 0.75f : Math.max(0.0F, target.getHealth());
         float max = target == null ? 1.0f : Math.max(1.0F, target.getMaxHealth());
         int bar = (int) ((w - 14) * Math.min(1.0F, health / max));
