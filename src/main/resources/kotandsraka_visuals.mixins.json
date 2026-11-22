@@ -6,7 +6,8 @@
     "ItemInHandRendererMixin",
     "ScreenHudDragMixin",
     "EntityOutlineColorMixin",
-    "LivingEntityOutlineMixin"
+    "LivingEntityOutlineMixin",
+    "AvatarOutlineMixin"
   ],
   "injectors": {
     "defaultRequire": 1
