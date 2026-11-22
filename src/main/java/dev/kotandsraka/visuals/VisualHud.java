@@ -430,30 +430,23 @@ public final class VisualHud {
         List<String> modules = activeModules(cfg);
         if (modules.isEmpty()) return;
 
+        // Use one transform for the panel and every label. This keeps the measured
+        // background dimensions, text size, and row spacing in the same coordinate space.
         float scale = activeModulesScale(cfg);
         int x = HudLayoutEditor.modulesX(mc, cfg);
         int y = cfg.modulesHudY;
         int panelWidth = activeModulesBaseWidth(mc, modules);
         int panelHeight = activeModulesBaseHeight(modules.size());
         int textColor = VisualConfig.moduleTextColor();
-        float textScale = VisualConfig.moduleTextScale();
 
         g.pose().pushMatrix();
         g.pose().translate((float) x, (float) y);
         g.pose().scale(scale, scale);
         g.fill(0, 0, panelWidth, panelHeight, VisualConfig.panelColor());
         g.fill(0, 0, panelWidth, 2, VisualConfig.accentColor());
-        g.pose().pushMatrix();
-        g.pose().translate(6.0f, 6.0f);
-        g.pose().scale(textScale, textScale);
-        g.drawString(mc.font, "KOTCODE", 0, 0, textColor, false);
-        g.pose().popMatrix();
+        g.drawString(mc.font, "KOTCODE", 6, 6, textColor, false);
         for (int i = 0; i < modules.size(); i++) {
-            g.pose().pushMatrix();
-            g.pose().translate(6.0f, 19.0f + i * 11.0f);
-            g.pose().scale(textScale, textScale);
-            g.drawString(mc.font, modules.get(i), 0, 0, textColor, false);
-            g.pose().popMatrix();
+            g.drawString(mc.font, modules.get(i), 6, 19 + i * 11, textColor, false);
         }
         g.pose().popMatrix();
     }
@@ -496,18 +489,23 @@ public final class VisualHud {
     }
 
     private static float activeModulesScale(VisualConfig cfg) {
-        if (!Float.isFinite(cfg.modulesHudScale)) return 1.0f;
-        return Math.max(0.40f, Math.min(1.0f, cfg.modulesHudScale));
+        float hudScale = Float.isFinite(cfg.modulesHudScale)
+            ? Math.max(0.40f, Math.min(1.0f, cfg.modulesHudScale)) : 1.0f;
+        // The font-size slider scales the whole module panel with its text, not
+        // just the glyphs. This prevents rows from escaping the panel at large sizes.
+        return hudScale * VisualConfig.moduleTextScale();
     }
 
     private static int activeModulesBaseWidth(Minecraft mc, List<String> modules) {
         int width = mc.font.width("KOTCODE");
         for (String module : modules) width = Math.max(width, mc.font.width(module));
-        return (int) Math.ceil(width * VisualConfig.moduleTextScale()) + 14;
+        return width + 14;
     }
 
     private static int activeModulesBaseHeight(int moduleCount) {
-        return (int) Math.ceil((moduleCount * 11.0f + 20.0f) * VisualConfig.moduleTextScale());
+        // Header baseline 6; first module baseline 19; each line is 11 px apart.
+        // Include the final 9 px glyph height and 4 px of bottom padding.
+        return Math.max(32, moduleCount * 11 + 21);
     }
 
     public static int activeModulesWidth(Minecraft mc, VisualConfig cfg) {
